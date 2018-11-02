@@ -14,10 +14,40 @@ local function goToBuffer(tabNo)
     end
 end
 
-function me.init()
-    events.connect(events.BUFFER_DELETED, function(one, two, three)
-        ui.statusbar_text = "closed" .. string.format("%q %q %q", one, two, three)
+local function setupRestoreTabsFeature()
+    local openedFiles = {}
+    local lastClosedFiles = {}
+    events.connect(events.FILE_OPENED, function(fullFilePath)
+        openedFiles[1 + #openedFiles] = fullFilePath
     end)
+
+    events.connect(events.BUFFER_DELETED, function()
+        for i, fullFilePath in ipairs(openedFiles) do
+            local found = false
+            for _, buf in ipairs(_BUFFERS) do
+                if buf.filename == fullFilePath then
+                    found = true
+                    break
+                end
+            end
+            if not found then
+                lastClosedFiles[1 + #lastClosedFiles] = fullFilePath
+                table.remove(openedFiles, i)
+            end
+        end
+    end)
+
+    keys.cT = function()
+        if #lastClosedFiles > 0 then
+            local restoreFile = lastClosedFiles[#lastClosedFiles]
+            table.remove(lastClosedFiles)
+            io.open_file(restoreFile)
+        end
+    end
+end
+
+function me.init()
+    setupRestoreTabsFeature()
 
     keys.a0 = function() goToBuffer(0) end
     keys.a1 = function() goToBuffer(1) end
