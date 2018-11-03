@@ -1,13 +1,22 @@
 local me = {}
 
 
+local envHome = os.getenv("HOME")
+
+
+
+local function expandHomeDirPrefix(path)
+    if path:sub(1, 2) == '~/' then
+        path = envHome .. path:sub(2)
+    end
+    return path
+end
+
 
 local function showFilteredListDialogOfFiles(dir)
-    if dir:sub(1, 1) == '~' then
-        dir = os.getenv("HOME") .. dir:sub(2)
-    end
-
     local filerelpaths = {}
+    dir = expandHomeDirPrefix(dir)
+
     lfs.dir_foreach(dir, function(fullfilepath)
         filerelpaths[1 + #filerelpaths] = fullfilepath:sub(2 + #dir)
     end)
@@ -27,11 +36,9 @@ end
 
 
 local function subDirs(dir)
-    if dir:sub(1, 1) == '~' then
-        dir = os.getenv("HOME") .. dir:sub(2)
-    end
-
     local subdirs = {}
+    dir = expandHomeDirPrefix(dir)
+
     lfs.dir_foreach(dir, function(fullpath)
         if fullpath:sub(-1) == '/' then
             subdirs[1 + #subdirs] = fullpath:sub(2 + #dir)

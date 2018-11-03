@@ -3,7 +3,7 @@ local me = {}
 
 local currentlyOpenedFiles = {} -- most-recently opened is last
 local recentlyClosedFiles = {} -- most-recently closed is first
-local envhomeprefix = os.getenv("HOME") .. '/'
+local envHomePrefix = os.getenv("HOME") .. '/'
 
 
 
@@ -14,8 +14,8 @@ local function filePathParentDir(path)
     return path:gsub("(.*/)(.*)", "%1")
 end
 local function prettifiedHomeDirPrefix(path)
-    if path:sub(1, #envhomeprefix) == envhomeprefix then
-        path = '~' .. path:sub(#envhomeprefix)
+    if path:sub(1, #envHomePrefix) == envHomePrefix then
+        path = '~' .. path:sub(#envHomePrefix)
     end
     return path
 end
