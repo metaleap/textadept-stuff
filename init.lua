@@ -2,9 +2,9 @@ local me = {}
 
 
 
+local ux = require 'metaleap_zentient.ux'
 local favdirs = require 'metaleap_zentient.favdirs'
 local favcmds = require 'metaleap_zentient.favcmds'
-local ux = require 'metaleap_zentient.ux'
 
 
 keys['f1'] = {}

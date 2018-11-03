@@ -184,6 +184,7 @@ local function setupAutoEnclosers()
 end
 
 
+-- buf-tab context-menu item: "close others" / close-all-but-this-tab
 local function setupBuftabCloseOthers()
     textadept.menu.tab_context_menu[1 + #textadept.menu.tab_context_menu] = { 'Close Others', function()
         local curfilename = buffer.filename
@@ -193,6 +194,20 @@ local function setupBuftabCloseOthers()
             end
         end
     end }
+end
+
+
+local function setupShowCurFileFullPath()
+    local menu = { title = prettifiedHomeDirPrefix(buffer.filename) }
+    for _, stdmenu in ipairs(textadept.menu.menubar) do
+        menu[1 + #menu] = stdmenu
+    end
+    textadept.menu.menubar = { menu }
+
+    events.connect(events.BUFFER_AFTER_SWITCH, function()
+        ui.statusbar_text = buffer.filename
+        textadept.menu.menubar[1].title = "_   " .. prettifiedHomeDirPrefix(buffer.filename) .. '\t'
+    end)
 end
 
 
@@ -208,10 +223,7 @@ function me.init()
     keys.a8 = function() goToBuftab(8) end
     keys.a9 = function() goToBuftab(9) end
 
-    events.connect(events.BUFFER_AFTER_SWITCH, function()
-        ui.statusbar_text = buffer.filename
-    end)
-
+    setupShowCurFileFullPath()
     setupSaneBuftabLabels()
     keys.cT = setupReopenClosedBuftabs()
     keys.cO = setupRecentlyClosed()
