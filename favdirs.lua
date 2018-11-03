@@ -55,16 +55,18 @@ end
 function me.init(favDirs)
     keys['f1']['o'] = function() showFilteredListDialogOfDirs(favDirs) end
 
-    local menu = { title = ''}
-    for _, favdir in ipairs(favDirs) do
-        local subdirs = subDirs(favdir)
-        local submenu = { title = favdir }
-        for _, subdir in ipairs(subdirs) do
-            submenu[1 + #submenu] = { subdir, function() showFilteredListDialogOfFiles(favdir .. '/' .. subdir) end }
+    if #favDirs > 0 then
+        local menu = { title = ''}
+        for _, favdir in ipairs(favDirs) do
+            local subdirs = subDirs(favdir)
+            local submenu = { title = favdir }
+            for _, subdir in ipairs(subdirs) do
+                submenu[1 + #submenu] = { subdir, function() showFilteredListDialogOfFiles(favdir .. '/' .. subdir) end }
+            end
+            menu[1 + #menu] = submenu
         end
-        menu[1 + #menu] = submenu
+        textadept.menu.menubar[1 + #textadept.menu.menubar] = menu
     end
-    textadept.menu.menubar[1 + #textadept.menu.menubar] = menu
 end
 
 

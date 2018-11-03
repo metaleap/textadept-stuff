@@ -53,11 +53,13 @@ end
 
 
 function me.init(favCmds)
-    local menu = { title = ''}
-    for _, favcmd in ipairs(favCmds) do
-        menu[1 + #menu] = { favcmd, onCmd(favcmd) }
+    if #favCmds > 0 then
+        local menu = { title = ''}
+        for _, favcmd in ipairs(favCmds) do
+            menu[1 + #menu] = { favcmd, onCmd(favcmd) }
+        end
+        textadept.menu.menubar[1 + #textadept.menu.menubar] = menu
     end
-    textadept.menu.menubar[1 + #textadept.menu.menubar] = menu
 end
 
 
