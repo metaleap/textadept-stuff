@@ -1,9 +1,24 @@
 local me = {}
 
 
-local openedFiles = {}
-local lastClosedFiles = {}
+local currentlyOpenedFiles = {} -- most-recently opened is last
+local recentlyClosedFiles = {} -- most-recently closed is first
+local envhomeprefix = os.getenv("HOME") .. '/'
 
+
+
+local function filePathBaseName(path)
+    return path:gsub("(.*/)(.*)", "%2")
+end
+local function filePathParentDir(path)
+    return path:gsub("(.*/)(.*)", "%1")
+end
+local function prettifiedHomeDirPrefix(path)
+    if path:sub(1, #envhomeprefix) == envhomeprefix then
+        path = '~' .. path:sub(#envhomeprefix)
+    end
+    return path
+end
 
 
 -- allows alt+1, alt+2 .. alt+0 to switch to that tab
@@ -24,7 +39,6 @@ end
 
 -- ensures no duplicate tab labels by including file paths when necessary
 local function setupSaneBufferTabLabels()
-    local homeprefix = os.getenv("HOME") .. '/'
     local ensure = function()
         local all = {}
         for _, buf in ipairs(_BUFFERS) do
@@ -32,7 +46,7 @@ local function setupSaneBufferTabLabels()
                 local namepref, namesuff = '    ', '    '
                 if buf.modify then namepref, namesuff = '    ', '      ' end
 
-                local filebasename = buf.filename:gsub("(.*/)(.*)", "%2")
+                local filebasename = filePathBaseName(buf.filename)
                 buf.tab_label = namepref .. filebasename .. namesuff
                 local byname = all[filebasename]
                 if byname == nil then
@@ -50,9 +64,7 @@ local function setupSaneBufferTabLabels()
                     if buf.modify then namepref, namesuff = '    ', '      ' end
 
                     buf.tab_label = buf.filename
-                    if buf.tab_label:sub(1, #homeprefix) == homeprefix then
-                        buf.tab_label = '~' .. buf.tab_label:sub(#homeprefix)
-                    end
+                    buf.tab_label = prettifiedHomeDirPrefix(buf.tab_label)
                     buf.tab_label = namepref .. buf.tab_label .. namesuff
                 end
             end
@@ -74,15 +86,21 @@ end
 -- allows ctrl+shift+tab to reopen recently-closed tabs
 local function setupReopenClosedBufferTabs()
     for _, buf in ipairs(_BUFFERS) do
-        openedFiles[1 + #openedFiles] = buf.filename
+        currentlyOpenedFiles[1 + #currentlyOpenedFiles] = buf.filename
     end
+
     events.connect(events.FILE_OPENED, function(fullFilePath)
-        openedFiles[1 + #openedFiles] = fullFilePath
+        currentlyOpenedFiles[1 + #currentlyOpenedFiles] = fullFilePath
+        for i = #recentlyClosedFiles, 1, -1 do
+            if recentlyClosedFiles[i] == fullFilePath then
+                table.remove(recentlyClosedFiles, i)
+            end
+        end
     end)
 
     events.connect(events.BUFFER_DELETED, function()
-        for i, fullFilePath in ipairs(openedFiles) do
-            local found = false
+        for i = #currentlyOpenedFiles, 1, -1 do
+            local fullFilePath, found = currentlyOpenedFiles[i], false
             for _, buf in ipairs(_BUFFERS) do
                 if buf.filename == fullFilePath then
                     found = true
@@ -90,25 +108,45 @@ local function setupReopenClosedBufferTabs()
                 end
             end
             if not found then -- this one was just closed
-                lastClosedFiles[1 + #lastClosedFiles] = fullFilePath
-                table.remove(openedFiles, i)
+                table.insert(recentlyClosedFiles, 1, fullFilePath)
+                --recentlyClosedFiles[1 + #recentlyClosedFiles] = fullFilePath
+                table.remove(currentlyOpenedFiles, i)
             end
         end
     end)
 
     return function()
-        if #lastClosedFiles > 0 then
-            local restoreFile = lastClosedFiles[#lastClosedFiles]
-            table.remove(lastClosedFiles)
+        if #recentlyClosedFiles > 0 then
+            local restoreFile = recentlyClosedFiles[1] -- #recentlyClosedFiles]
             io.open_file(restoreFile)
         end
     end
 end
 
 
---
+-- opens dialog to select "recent files" to open, but sorted by most-recently-
+--          closed and without listing files that are already currently opened
 local function setupRecentlyClosed()
     return function()
+        if #recentlyClosedFiles > 0 then
+            local filelistitems = {}
+            for _, fullfilepath in ipairs(recentlyClosedFiles) do
+                filelistitems[1 + #filelistitems] = prettifiedHomeDirPrefix(filePathParentDir(fullfilepath))
+                filelistitems[1 + #filelistitems] = filePathBaseName(fullfilepath)
+            end
+
+            local button, selfiles = ui.dialogs.filteredlist {
+                title = 'Re-open recently closed:', width = 2345, height = 1234, select_multiple = true,
+                columns = { 'Directory', 'File' }, items = filelistitems,
+            }
+            if button == 1 then
+                local fullfilepaths = {}
+                for _, idx in ipairs(selfiles) do
+                    fullfilepaths[1 + #fullfilepaths] = recentlyClosedFiles[idx]
+                end
+                io.open_file(fullfilepaths)
+            end
+        end
     end
 end
 
