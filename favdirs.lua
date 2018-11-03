@@ -26,17 +26,6 @@ local function showFilteredListDialogOfFiles(dir)
 end
 
 
-local function showFilteredListDialogOfDirs(favDirs)
-    local button, i = ui.dialogs.filteredlist{
-        title = 'Open from..', width = 2345, height = 1234,
-        columns = 'favDir:', items = favDirs,
-    }
-    if button == 1 then
-        showFilteredListDialogOfFiles(favDirs[i])
-    end
-end
-
-
 local function subDirs(dir)
     if dir:sub(1, 1) == '~' then
         dir = os.getenv("HOME") .. dir:sub(2)
@@ -52,11 +41,31 @@ local function subDirs(dir)
 end
 
 
+local function showFilteredListDialogOfDirs(favDirs)
+    local dirlistitems, fulldirpaths = {}, {}
+    for _, favdir in ipairs(favDirs) do
+        for _, subdir in ipairs(subDirs(favdir)) do
+            fulldirpaths[1 + #fulldirpaths] = favdir .. '/' .. subdir
+            dirlistitems[1 + #dirlistitems] = favdir
+            dirlistitems[1 + #dirlistitems] = subdir
+        end
+    end
+
+    local button, i = ui.dialogs.filteredlist{
+        title = 'Open from..', width = 2345, height = 1234,
+        columns = {'favDir', 'sub-Dir'}, items = dirlistitems,
+    }
+    if button == 1 then
+        showFilteredListDialogOfFiles(fulldirpaths[i])
+    end
+end
+
+
 function me.init(favDirs)
     keys['f1']['o'] = function() showFilteredListDialogOfDirs(favDirs) end
 
     if #favDirs > 0 then
-        local menu = { title = ''}
+        local menu = { title = '  ' }
         for _, favdir in ipairs(favDirs) do
             local subdirs = subDirs(favdir)
             local submenu = { title = favdir }

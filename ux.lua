@@ -1,6 +1,10 @@
 local me = {}
 
 
+local openedFiles = {}
+local lastClosedFiles = {}
+
+
 
 -- allows alt+1, alt+2 .. alt+0 to switch to that tab
 local function goToBufferTab(tabNo)
@@ -25,8 +29,8 @@ local function setupSaneBufferTabLabels()
         local all = {}
         for _, buf in ipairs(_BUFFERS) do
             if buf.filename then
-                local namepref, namesuff = '    ', '    '
-                if buf.modify then namesuff = '  ☼  ' end
+                local namepref, namesuff = '    ', '    '
+                if buf.modify then namepref, namesuff = '    ', '      ' end
 
                 local filebasename = buf.filename:gsub("(.*/)(.*)", "%2")
                 buf.tab_label = namepref .. filebasename .. namesuff
@@ -42,8 +46,8 @@ local function setupSaneBufferTabLabels()
         for name, bufs in pairs(all) do
             if #bufs > 1 then -- name occurs more than once
                 for _, buf in ipairs(bufs) do
-                    local namepref, namesuff = '    ', '    '
-                    if buf.modify then namesuff = '  ☼  ' end
+                    local namepref, namesuff = '    ', '    '
+                    if buf.modify then namepref, namesuff = '    ', '      ' end
 
                     buf.tab_label = buf.filename
                     if buf.tab_label:sub(1, #homeprefix) == homeprefix then
@@ -69,9 +73,6 @@ end
 
 -- allows ctrl+shift+tab to reopen recently-closed tabs
 local function setupReopenClosedBufferTabs()
-    local openedFiles = {}
-    local lastClosedFiles = {}
-
     for _, buf in ipairs(_BUFFERS) do
         openedFiles[1 + #openedFiles] = buf.filename
     end
@@ -88,28 +89,31 @@ local function setupReopenClosedBufferTabs()
                     break
                 end
             end
-            if not found then
+            if not found then -- this one was just closed
                 lastClosedFiles[1 + #lastClosedFiles] = fullFilePath
                 table.remove(openedFiles, i)
             end
         end
     end)
 
-    keys.cT = function()
+    return function()
         if #lastClosedFiles > 0 then
             local restoreFile = lastClosedFiles[#lastClosedFiles]
             table.remove(lastClosedFiles)
             io.open_file(restoreFile)
         end
     end
+end
 
+
+--
+local function setupRecentlyClosed()
+    return function()
+    end
 end
 
 
 function me.init()
-    setupReopenClosedBufferTabs()
-    setupSaneBufferTabLabels()
-
     keys.a0 = function() goToBufferTab(0) end
     keys.a1 = function() goToBufferTab(1) end
     keys.a2 = function() goToBufferTab(2) end
@@ -120,9 +124,14 @@ function me.init()
     keys.a7 = function() goToBufferTab(7) end
     keys.a8 = function() goToBufferTab(8) end
     keys.a9 = function() goToBufferTab(9) end
+
     events.connect(events.BUFFER_AFTER_SWITCH, function()
         ui.statusbar_text = buffer.filename
     end)
+
+    setupSaneBufferTabLabels()
+    keys.cT = setupReopenClosedBufferTabs()
+    keys.cO = setupRecentlyClosed()
 end
 
 
