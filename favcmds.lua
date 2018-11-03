@@ -1,5 +1,7 @@
 local me = {}
 
+
+
 local function fillInCmd(cmd)
     local pat = "%$%(([%w_]+)%)"
     local names = {}
@@ -35,6 +37,7 @@ local function fillInCmd(cmd)
     return cmd
 end
 
+
 local function onCmd(cmd)
     return function()
         cmd = fillInCmd(cmd)
@@ -48,6 +51,7 @@ local function onCmd(cmd)
     end
 end
 
+
 function me.init(favCmds)
     local menu = { title = ''}
     for _, favcmd in ipairs(favCmds) do
@@ -55,5 +59,7 @@ function me.init(favCmds)
     end
     textadept.menu.menubar[1 + #textadept.menu.menubar] = menu
 end
+
+
 
 return me

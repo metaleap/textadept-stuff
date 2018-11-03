@@ -1,5 +1,7 @@
 local me = {}
 
+
+
 local function showFilteredListDialogOfFiles(dir)
     if dir:sub(1, 1) == '~' then
         dir = os.getenv("HOME") .. dir:sub(2)
@@ -23,6 +25,7 @@ local function showFilteredListDialogOfFiles(dir)
     end
 end
 
+
 local function showFilteredListDialogOfDirs(favDirs)
     local button, i = ui.dialogs.filteredlist{
         title = 'Open from..', width = 2345, height = 1234,
@@ -32,6 +35,7 @@ local function showFilteredListDialogOfDirs(favDirs)
         showFilteredListDialogOfFiles(favDirs[i])
     end
 end
+
 
 local function subDirs(dir)
     if dir:sub(1, 1) == '~' then
@@ -47,6 +51,7 @@ local function subDirs(dir)
     return subdirs
 end
 
+
 function me.init(favDirs)
     keys['f1']['o'] = function() showFilteredListDialogOfDirs(favDirs) end
 
@@ -61,5 +66,7 @@ function me.init(favDirs)
     end
     textadept.menu.menubar[1 + #textadept.menu.menubar] = menu
 end
+
+
 
 return me

@@ -1,5 +1,8 @@
 local me = {}
 
+
+
+-- allows alt+1, alt+2 .. alt+0 to switch to that tab
 local function goToBufferTab(tabNo)
     local buf = nil
     if tabNo == 0 then
@@ -14,13 +17,19 @@ local function goToBufferTab(tabNo)
     end
 end
 
+
+-- ensures no duplicate tab labels by including file paths when necessary
 local function setupSaneBufferTabLabels()
-    local on = function()
+    local homeprefix = os.getenv("HOME") .. '/'
+    local ensure = function()
         local all = {}
         for _, buf in ipairs(_BUFFERS) do
             if buf.filename then
+                local namepref, namesuff = '    ', '    '
+                if buf.modify then namesuff = '  ☼  ' end
+
                 local filebasename = buf.filename:gsub("(.*/)(.*)", "%2")
-                buf.tab_label = '    ' .. filebasename .. '    '
+                buf.tab_label = namepref .. filebasename .. namesuff
                 local byname = all[filebasename]
                 if byname == nil then
                     all[filebasename] = { buf }
@@ -29,29 +38,43 @@ local function setupSaneBufferTabLabels()
                 end
             end
         end
-        local homeprefix = os.getenv("HOME") .. '/'
+
         for name, bufs in pairs(all) do
-            if #bufs > 1 then
+            if #bufs > 1 then -- name occurs more than once
                 for _, buf in ipairs(bufs) do
+                    local namepref, namesuff = '    ', '    '
+                    if buf.modify then namesuff = '  ☼  ' end
+
                     buf.tab_label = buf.filename
                     if buf.tab_label:sub(1, #homeprefix) == homeprefix then
                         buf.tab_label = '~' .. buf.tab_label:sub(#homeprefix)
                     end
-                    buf.tab_label = '    ' .. buf.tab_label .. '    '
+                    buf.tab_label = namepref .. buf.tab_label .. namesuff
                 end
             end
         end
     end
 
-    events.connect(events.BUFFER_DELETED, on)
-    events.connect(events.FILE_OPENED, on)
-    events.connect(events.BUFFER_AFTER_SWITCH, on)
+    events.connect(events.BUFFER_DELETED, ensure)
+    events.connect(events.FILE_OPENED, ensure)
+    events.connect(events.BUFFER_AFTER_SWITCH, ensure)
+    events.connect(events.FILE_AFTER_SAVE, ensure)
+    events.connect(events.UPDATE_UI, function(upd)
+        if upd == buffer.UPDATE_CONTENT then ensure() end
+    end)
+
+    ensure()
 end
 
-local function setupRestoreClosedBufferTabs()
+
+-- allows ctrl+shift+tab to reopen recently-closed tabs
+local function setupReopenClosedBufferTabs()
     local openedFiles = {}
     local lastClosedFiles = {}
 
+    for _, buf in ipairs(_BUFFERS) do
+        openedFiles[1 + #openedFiles] = buf.filename
+    end
     events.connect(events.FILE_OPENED, function(fullFilePath)
         openedFiles[1 + #openedFiles] = fullFilePath
     end)
@@ -79,10 +102,12 @@ local function setupRestoreClosedBufferTabs()
             io.open_file(restoreFile)
         end
     end
+
 end
 
+
 function me.init()
-    setupRestoreClosedBufferTabs()
+    setupReopenClosedBufferTabs()
     setupSaneBufferTabLabels()
 
     keys.a0 = function() goToBufferTab(0) end
@@ -99,5 +124,7 @@ function me.init()
         ui.statusbar_text = buffer.filename
     end)
 end
+
+
 
 return me
