@@ -125,7 +125,7 @@ end
 
 
 -- opens dialog to select "recent files" to open, but sorted by most-recently-
---          closed and without listing files that are already currently opened
+-- closed and without listing files that are already currently opened
 local function setupRecentlyClosed()
     return function()
         if #recentlyClosedFiles > 0 then
