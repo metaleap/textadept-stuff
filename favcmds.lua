@@ -17,20 +17,20 @@ local function fillInCmd(cmd)
             inputbox.text[1 + #inputbox.text] = ''
         end
         local button, inputs = ui.dialogs.standard_inputbox(inputbox)
-        if button == 1 then
+        if button ~= 1 then
+            cmd = ""
+        else
             local kvs = {}
-            if type(inputs) == 'table' then
+            if type(inputs) ~= 'table' then
+                kvs[names[1]] = inputs
+            else
                 for i, name in ipairs(names) do
                     kvs[name] = inputs[i]
                 end
-            else
-                kvs[names[1]] = inputs
             end
             cmd = cmd:gsub(pat, function(name)
                 return kvs[name]
             end)
-        else
-            cmd = ""
         end
     end
 

@@ -26,10 +26,8 @@ local function goToBufferTab(tabNo)
     local buf = nil
     if tabNo == 0 then
         buf = _BUFFERS[#_BUFFERS]
-    else
-        if tabNo > 0 and tabNo <= #_BUFFERS then
-            buf = _BUFFERS[tabNo]
-        end
+    elseif tabNo > 0 and tabNo <= #_BUFFERS then
+        buf = _BUFFERS[tabNo]
     end
     if buf ~= nil then
         view.goto_buffer(view, buf)
@@ -151,6 +149,41 @@ local function setupRecentlyClosed()
 end
 
 
+-- when typing opening-brace-or-quote char while selection/s: enclose (rather
+-- than overwrite) selection(s), and crucially also preserve all selection(s)
+local function setupAutoEnclosers()
+    local encloser = function(left, right)
+        return function()
+            if buffer.selection_empty then
+                return false
+            else
+                local incr, newsels, numsels = 1, {}, buffer.selections
+                for i = 1, numsels do
+                    newsels[i] = { buffer.selection_n_start[i - 1] , buffer.selection_n_end[i - 1] }
+                    if newsels[i][2] < newsels[i][1] then
+                        newsels[i][1], newsels[i][2] = newsels[i][2], newsels[i][1]
+                    end
+                end
+                table.sort(newsels, function(dis, dat)
+                    return dis[1] < dat[1]
+                end)
+                textadept.editing.enclose(left, right)
+                for i = 0, numsels - 1 do
+                    buffer.selection_n_start[i], buffer.selection_n_end[i] = incr + newsels[i+1][1], incr + newsels[i+1][2]
+                    incr = incr + 2
+                end
+            end
+        end
+    end
+
+    textadept.editing.auto_pairs[96] = '`'
+    for left, right in pairs(textadept.editing.auto_pairs) do
+        local l = string.char(left)
+        keys[l] = encloser(l, right)
+    end
+end
+
+
 function me.init()
     keys.a0 = function() goToBufferTab(0) end
     keys.a1 = function() goToBufferTab(1) end
@@ -170,6 +203,7 @@ function me.init()
     setupSaneBufferTabLabels()
     keys.cT = setupReopenClosedBufferTabs()
     keys.cO = setupRecentlyClosed()
+    setupAutoEnclosers()
 end
 
 
