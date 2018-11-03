@@ -22,7 +22,7 @@ end
 
 
 -- allows alt+1, alt+2 .. alt+0 to switch to that tab
-local function goToBufferTab(tabNo)
+local function goToBuftab(tabNo)
     local buf = nil
     if tabNo == 0 then
         buf = _BUFFERS[#_BUFFERS]
@@ -36,7 +36,7 @@ end
 
 
 -- ensures no duplicate tab labels by including file paths when necessary
-local function setupSaneBufferTabLabels()
+local function setupSaneBuftabLabels()
     local ensure = function()
         local all = {}
         for _, buf in ipairs(_BUFFERS) do
@@ -82,7 +82,7 @@ end
 
 
 -- allows ctrl+shift+tab to reopen recently-closed tabs
-local function setupReopenClosedBufferTabs()
+local function setupReopenClosedBuftabs()
     for _, buf in ipairs(_BUFFERS) do
         currentlyOpenedFiles[1 + #currentlyOpenedFiles] = buf.filename
     end
@@ -165,7 +165,7 @@ local function setupAutoEnclosers()
                     end
                 end
                 table.sort(newsels, function(dis, dat)
-                    return dis[1] < dat[1]
+                    return dis[1] < dat[1] and dis[2] < dat[2]
                 end)
                 textadept.editing.enclose(left, right)
                 for i = 0, numsels - 1 do
@@ -177,32 +177,45 @@ local function setupAutoEnclosers()
     end
 
     textadept.editing.auto_pairs[96] = '`'
-    for left, right in pairs(textadept.editing.auto_pairs) do
-        local l = string.char(left)
-        keys[l] = encloser(l, right)
+    for l, right in pairs(textadept.editing.auto_pairs) do
+        local left = string.char(l)
+        keys[left] = encloser(left, right)
     end
 end
 
 
+local function setupBuftabCloseOthers()
+    textadept.menu.tab_context_menu[1 + #textadept.menu.tab_context_menu] = { 'Close Others', function()
+        local curfilename = buffer.filename
+        for _, buf in ipairs(_BUFFERS) do
+            if buf.filename == nil or buf.filename ~= curfilename then
+                buffer.delete(buf)
+            end
+        end
+    end }
+end
+
+
 function me.init()
-    keys.a0 = function() goToBufferTab(0) end
-    keys.a1 = function() goToBufferTab(1) end
-    keys.a2 = function() goToBufferTab(2) end
-    keys.a3 = function() goToBufferTab(3) end
-    keys.a4 = function() goToBufferTab(4) end
-    keys.a5 = function() goToBufferTab(5) end
-    keys.a6 = function() goToBufferTab(6) end
-    keys.a7 = function() goToBufferTab(7) end
-    keys.a8 = function() goToBufferTab(8) end
-    keys.a9 = function() goToBufferTab(9) end
+    keys.a0 = function() goToBuftab(0) end
+    keys.a1 = function() goToBuftab(1) end
+    keys.a2 = function() goToBuftab(2) end
+    keys.a3 = function() goToBuftab(3) end
+    keys.a4 = function() goToBuftab(4) end
+    keys.a5 = function() goToBuftab(5) end
+    keys.a6 = function() goToBuftab(6) end
+    keys.a7 = function() goToBuftab(7) end
+    keys.a8 = function() goToBuftab(8) end
+    keys.a9 = function() goToBuftab(9) end
 
     events.connect(events.BUFFER_AFTER_SWITCH, function()
         ui.statusbar_text = buffer.filename
     end)
 
-    setupSaneBufferTabLabels()
-    keys.cT = setupReopenClosedBufferTabs()
+    setupSaneBuftabLabels()
+    keys.cT = setupReopenClosedBuftabs()
     keys.cO = setupRecentlyClosed()
+    setupBuftabCloseOthers()
     setupAutoEnclosers()
 end
 
