@@ -198,7 +198,7 @@ end
 
 
 local function setupShowCurFileFullPath()
-    local menu = { title = prettifiedHomeDirPrefix(buffer.filename) }
+    local menu = { title = prettifiedHomeDirPrefix(buffer.filename or buffer.tab_label) }
     for _, stdmenu in ipairs(textadept.menu.menubar) do
         menu[1 + #menu] = stdmenu
     end
@@ -206,7 +206,7 @@ local function setupShowCurFileFullPath()
 
     events.connect(events.BUFFER_AFTER_SWITCH, function()
         ui.statusbar_text = buffer.filename
-        textadept.menu.menubar[1].title = "_   " .. prettifiedHomeDirPrefix(buffer.filename) .. '\t'
+        textadept.menu.menubar[1].title = "_   " .. prettifiedHomeDirPrefix(buffer.filename or buffer.tab_label) .. '\t'
     end)
 end
 
