@@ -130,7 +130,7 @@ local function setupRecentlyClosed()
 
             local button, selfiles = ui.dialogs.filteredlist {
                 title = 'Most recently closed:', width = 2345, height = 1234, select_multiple = true,
-                columns = { 'File:', 'Dir:', 'Full Path:' }, items = filelistitems, search_column = 3,
+                columns = { 'File:', 'Location:', 'Full Path:' }, items = filelistitems, search_column = 3,
             }
             if button == 1 then
                 local fullfilepaths = {}

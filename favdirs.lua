@@ -44,7 +44,7 @@ local function showFilteredListDialogOfDirs(favDirs)
 
     local button, i = ui.dialogs.filteredlist{
         title = 'Open from..', width = 2345, height = 1234,
-        columns = {'favDir', 'sub-Dir'}, items = dirlistitems,
+        columns = {'Filter by:', '...then select:'}, items = dirlistitems,
     }
     if button == 1 then
         showFilteredListDialogOfFiles(fulldirpaths[i], defaultfilters[fulldirpaths[i]])
@@ -53,22 +53,38 @@ end
 
 
 function favdirs.init(favDirs)
-    local hasany, menu = false, { title = '' }
+    local menu = { title = '' }
     for favdir, defaultfilter in pairs(favDirs) do
-        local subdirs = util.fsSubDirNames(util.fsPathExpandHomeDirTildePrefix(favdir))
-        local submenu = { title = util.fsPathPrettify(favdir, false, true) }
-        for _, subdir in ipairs(subdirs) do
-            submenu[1 + #submenu] = { util.fsPathPrettify(subdir, false, true), function()
-                showFilteredListDialogOfFiles(favdir .. '/' .. subdir, defaultfilter)
-            end }
+        if not util.fsPathHasDotNames(favdir) then
+            local subdirs = util.fsSubDirNames(util.fsPathExpandHomeDirTildePrefix(favdir))
+            local anysubs, submenu = false, { title = util.fsPathPrettify(favdir, false, true) }
+            for _, subdir in ipairs(subdirs) do
+                if not util.fsPathHasDotNames(subdir) then
+                    anysubs, submenu[1 + #submenu] = true, { util.fsPathPrettify(subdir, false, true), function()
+                        showFilteredListDialogOfFiles(favdir .. '/' .. subdir, defaultfilter)
+                    end }
+                end
+            end
+            if anysubs then menu[1 + #menu] = submenu end
         end
-        hasany, menu[1 + #menu] = true, submenu
     end
-    if hasany then
-        textadept.menu.menubar[1 + #textadept.menu.menubar] = menu
+
+    do
+        local lastdirpath = util.envHome
+        menu[1 + #menu] = { '(Elsewhere...)', function()
+            local dirpath = ui.dialogs.fileselect{
+                title = 'Specify directory:', select_only_directories = true, with_directory = lastdirpath,
+            }
+            if dirpath then
+                lastdirpath = dirpath
+                showFilteredListDialogOfFiles(dirpath, '')
+            end
+        end }
     end
+
+    textadept.menu.menubar[1 + #textadept.menu.menubar] = menu
     return function()
-        if hasany then showFilteredListDialogOfDirs(favDirs) end
+        showFilteredListDialogOfDirs(favDirs)
     end
 end
 
