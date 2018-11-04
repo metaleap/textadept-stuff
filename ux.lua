@@ -123,12 +123,14 @@ local function setupRecentlyClosed()
         if #recentlyClosedFiles > 0 then
             local filelistitems = {}
             for _, fullfilepath in ipairs(recentlyClosedFiles) do
-                filelistitems[1 + #filelistitems] = util.fsPathPrettify(fullfilepath, true, true)
+                filelistitems[1 + #filelistitems] = util.fsPathPrettify(util.fsPathBaseName(fullfilepath), true, true) .. '\t\t'
+                filelistitems[1 + #filelistitems] = util.fsPathPrettify(util.fsPathParentDir(fullfilepath), true, true) .. '\t\t'
+                filelistitems[1 + #filelistitems] = fullfilepath
             end
 
             local button, selfiles = ui.dialogs.filteredlist {
-                title = 'Re-open recently closed:', width = 2345, height = 1234,
-                columns = { 'File:' }, items = filelistitems, select_multiple = true,
+                title = 'Most recently closed:', width = 2345, height = 1234, select_multiple = true,
+                columns = { 'File:', 'Dir:', 'Full Path:' }, items = filelistitems, search_column = 3,
             }
             if button == 1 then
                 local fullfilepaths = {}
