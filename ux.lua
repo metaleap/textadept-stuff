@@ -102,7 +102,6 @@ local function setupReopenClosedBuftabs()
             end
             if not found then -- this one was just closed
                 table.insert(recentlyClosedFiles, 1, fullFilePath)
-                --recentlyClosedFiles[1 + #recentlyClosedFiles] = fullFilePath
                 table.remove(currentlyOpenedFiles, i)
             end
         end
@@ -110,7 +109,7 @@ local function setupReopenClosedBuftabs()
 
     return function()
         if #recentlyClosedFiles > 0 then
-            local restoreFile = recentlyClosedFiles[1] -- #recentlyClosedFiles]
+            local restoreFile = recentlyClosedFiles[1]
             io.open_file(restoreFile)
         end
     end
@@ -124,13 +123,12 @@ local function setupRecentlyClosed()
         if #recentlyClosedFiles > 0 then
             local filelistitems = {}
             for _, fullfilepath in ipairs(recentlyClosedFiles) do
-                filelistitems[1 + #filelistitems] = util.fsPathPrettify(util.fsPathParentDir(fullfilepath), true, true)
-                filelistitems[1 + #filelistitems] = util.fsPathBaseName(fullfilepath)
+                filelistitems[1 + #filelistitems] = util.fsPathPrettify(fullfilepath, true, true)
             end
 
             local button, selfiles = ui.dialogs.filteredlist {
-                title = 'Re-open recently closed:', width = 2345, height = 1234, select_multiple = true,
-                columns = { 'Directory', 'File' }, items = filelistitems,
+                title = 'Re-open recently closed:', width = 2345, height = 1234,
+                columns = { 'File:' }, items = filelistitems, select_multiple = true,
             }
             if button == 1 then
                 local fullfilepaths = {}
@@ -218,19 +216,23 @@ local function setupShowCurFileFullPath()
 end
 
 
--- keeps a buf-tab's caret-position in mem to restore it on reopen-after-close
-local function setupBuftabSelStateCapture()
-    local caretpos = {}
+-- keeps a buf-tab's selection-state in mem to restore it on reopen-after-close
+local function setupBuftabSelStateRecall()
+    local bufstates, bufprops = {}, { 'anchor', 'current_pos', 'first_visible_line', 'x_offset' }
 
     events.connect(events.UPDATE_UI, function(upd)
-        if upd == buffer.UPDATE_SELECTION and buffer.filename then
-            caretpos[buffer.filename] = buffer.current_pos
+        if buffer.filename then
+            local bufstate = {}
+            for _, p in ipairs(bufprops) do bufstate[p] = buffer[p] end
+            bufstates[buffer.filename] = bufstate
         end
     end)
 
     events.connect(events.FILE_OPENED, function(filepath)
-        local pos = caretpos[filepath]
-        if pos then buffer.goto_pos(pos) end
+        local bufstate = bufstates[filepath]
+        if bufstate then
+            for _, p in ipairs(bufprops) do buffer[p] = bufstate[p] end
+        end
     end)
 end
 
@@ -252,7 +254,7 @@ function ux.init()
     keys.cT = setupReopenClosedBuftabs()
     keys.cO = setupRecentlyClosed()
     setupBuftabCloseOthers()
-    setupBuftabSelStateCapture()
+    setupBuftabSelStateRecall()
     setupAutoEnclosers()
 end
 
