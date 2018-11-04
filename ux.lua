@@ -1,26 +1,15 @@
-local me = {}
+local ux = {}
+
+
 
 -- to read the module, begin from the bottom-most func `init`
+
+local util = require 'metaleap_zentient.util'
 
 
 local currentlyOpenedFiles = {} -- most-recently opened is last
 local recentlyClosedFiles = {} -- most-recently closed is first
 local envHomePrefix = os.getenv("HOME") .. '/'
-
-
-
-local function filePathBaseName(path)
-    return path:gsub("(.*/)(.*)", "%2")
-end
-local function filePathParentDir(path)
-    return path:gsub("(.*/)(.*)", "%1")
-end
-local function prettifiedHomeDirPrefix(path)
-    if path:sub(1, #envHomePrefix) == envHomePrefix then
-        path = '~' .. path:sub(#envHomePrefix)
-    end
-    return path
-end
 
 
 -- allows alt+1, alt+2 .. alt+0 to switch to that tab
@@ -46,7 +35,7 @@ local function setupSaneBuftabLabels()
                 local namepref, namesuff = '    ', '    '
                 if buf.modify then namepref, namesuff = '    ', '      ' end
 
-                local filebasename = filePathBaseName(buf.filename)
+                local filebasename = util.fsPathBaseName(buf.filename)
                 buf.tab_label = namepref .. filebasename .. namesuff
                 local byname = all[filebasename]
                 if byname == nil then
@@ -64,7 +53,7 @@ local function setupSaneBuftabLabels()
                     if buf.modify then namepref, namesuff = '    ', '      ' end
 
                     buf.tab_label = buf.filename
-                    buf.tab_label = prettifiedHomeDirPrefix(buf.tab_label)
+                    buf.tab_label = util.fsPathPrettify(buf.tab_label, true, false)
                     buf.tab_label = namepref .. buf.tab_label .. namesuff
                 end
             end
@@ -132,8 +121,8 @@ local function setupRecentlyClosed()
         if #recentlyClosedFiles > 0 then
             local filelistitems = {}
             for _, fullfilepath in ipairs(recentlyClosedFiles) do
-                filelistitems[1 + #filelistitems] = prettifiedHomeDirPrefix(filePathParentDir(fullfilepath))
-                filelistitems[1 + #filelistitems] = filePathBaseName(fullfilepath)
+                filelistitems[1 + #filelistitems] = util.fsPathPrettify(util.fsPathParentDir(fullfilepath), true, true)
+                filelistitems[1 + #filelistitems] = util.fsPathBaseName(fullfilepath)
             end
 
             local button, selfiles = ui.dialogs.filteredlist {
@@ -205,14 +194,18 @@ end
 -- all built-in menus are relocated under a single top-level menu that always
 -- shows the full file path of the currently active buf-tab
 local function setupShowCurFileFullPath()
-    local menu = { title = prettifiedHomeDirPrefix(buffer.filename or buffer.tab_label) }
+    local menutitle = function()
+        return util.fsPathPrettify(util.fsPathParentDir(buffer.filename or buffer.tab_label), true, true):gsub('_', '__') .. '\t'
+    end
+
+    local menu = { title = menutitle() }
     for _, stdmenu in ipairs(textadept.menu.menubar) do
         menu[1 + #menu] = stdmenu
     end
     textadept.menu.menubar = { menu }
 
     local ensure = function()
-        textadept.menu.menubar[1].title = prettifiedHomeDirPrefix(filePathParentDir(buffer.filename or buffer.tab_label)):gsub('_', '__') .. '\t'
+        textadept.menu.menubar[1].title = menutitle()
     end
 
     events.connect(events.FILE_AFTER_SAVE, ensure)
@@ -239,7 +232,7 @@ local function setupBuftabSelStateCapture()
 end
 
 
-function me.init()
+function ux.init()
     keys.a0 = function() goToBuftab(0) end
     keys.a1 = function() goToBuftab(1) end
     keys.a2 = function() goToBuftab(2) end
@@ -262,4 +255,4 @@ end
 
 
 
-return me
+return ux

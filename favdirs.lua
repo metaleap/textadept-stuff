@@ -1,76 +1,44 @@
-local me = {}
+local favdirs = {}
 
 
-local envHome = os.getenv("HOME")
+local util = require 'metaleap_zentient.util'
 
-
-
-local function expandHomeDirPrefix(path)
-    if path:sub(1, 2) == '~/' then
-        path = envHome .. path:sub(2)
-    end
-    return path
-end
-local function prettifyPathForDisplay(path)
-    return path:gsub('/', ' / ')
-end
-local function doesPathHaveDotDirs(path)
-    for split in string.gmatch(path, "([^/]+)") do
-        if split:sub(1, 1) == '.' then return true end
-    end
-    return false
-end
 
 
 local function showFilteredListDialogOfFiles(dir, defaultFilter)
-    local filerelpaths = {}
-    dir = expandHomeDirPrefix(dir)
+    local filerelpaths, filerelpathitems = {}, {}
+    dir = util.fsPathExpandHomeDirTildePrefix(dir)
 
     lfs.dir_foreach(dir, function(fullfilepath)
         local relfilepath = fullfilepath:sub(2 + #dir)
-        if not doesPathHaveDotDirs(relfilepath) then
-            filerelpaths[1 + #filerelpaths] = prettifyPathForDisplay(relfilepath)
+        if not util.fsPathHasDotNames(relfilepath) then
+            filerelpaths[1 + #filerelpaths] = relfilepath
+            filerelpathitems[1 + #filerelpathitems] = util.fsPathPrettify(relfilepath, false, true)
         end
     end)
 
     local button, selfiles = ui.dialogs.filteredlist{
-        title = prettifyPathForDisplay(dir), width = 2345, height = 1234, select_multiple = true,
-        text = defaultFilter, columns = 'Files:', items = filerelpaths,
+        title = util.fsPathPrettify(dir, true, true), width = 2345, height = 1234, select_multiple = true,
+        text = defaultFilter, columns = 'Files:', items = filerelpathitems,
     }
     if button == 1 then
         local fullfilepaths = {}
         for _, idx in ipairs(selfiles) do
-            fullfilepaths[1 + #fullfilepaths] = dir .. '/' .. filerelpaths[idx]
+            fullfilepaths[1 + #fullfilepaths] = dir .. filerelpaths[idx]
         end
         io.open_file(fullfilepaths)
     end
 end
 
 
-local function subDirs(dir)
-    local subdirs = {}
-    dir = expandHomeDirPrefix(dir)
-
-    lfs.dir_foreach(dir, function(fullpath)
-        if fullpath:sub(-1) == '/' then
-            local subdirname = fullpath:sub(2 + #dir)
-            if subdirname:sub(1, 1) ~= '.' then
-                subdirs[1 + #subdirs] = subdirname
-            end
-        end
-    end, nil, 0, true)
-    return subdirs
-end
-
-
 local function showFilteredListDialogOfDirs(favDirs)
     local dirlistitems, fulldirpaths, defaultfilters = {}, {}, {}
     for favdir, defaultfilter in pairs(favDirs) do
-        for _, subdir in ipairs(subDirs(favdir)) do
+        for _, subdir in ipairs(util.fsSubDirNames(util.fsPathExpandHomeDirTildePrefix(favdir))) do
             fulldirpaths[1 + #fulldirpaths] = favdir .. '/' .. subdir
             defaultfilters[fulldirpaths[#fulldirpaths]] = defaultfilter
-            dirlistitems[1 + #dirlistitems] = prettifyPathForDisplay(favdir .. '/')
-            dirlistitems[1 + #dirlistitems] = prettifyPathForDisplay(subdir)
+            dirlistitems[1 + #dirlistitems] = util.fsPathPrettify(favdir .. '/', false, true)
+            dirlistitems[1 + #dirlistitems] = util.fsPathPrettify(subdir, false, true)
         end
     end
 
@@ -84,13 +52,15 @@ local function showFilteredListDialogOfDirs(favDirs)
 end
 
 
-function me.init(favDirs)
+function favdirs.init(favDirs)
     local hasany, menu = false, { title = '' }
     for favdir, defaultfilter in pairs(favDirs) do
-        local subdirs = subDirs(favdir)
-        local submenu = { title = favdir }
+        local subdirs = util.fsSubDirNames(util.fsPathExpandHomeDirTildePrefix(favdir))
+        local submenu = { title = util.fsPathPrettify(favdir, false, true) }
         for _, subdir in ipairs(subdirs) do
-            submenu[1 + #submenu] = { subdir, function() showFilteredListDialogOfFiles(favdir .. '/' .. subdir, defaultfilter) end }
+            submenu[1 + #submenu] = { util.fsPathPrettify(subdir, false, true), function()
+                showFilteredListDialogOfFiles(favdir .. '/' .. subdir, defaultfilter)
+            end }
         end
         hasany, menu[1 + #menu] = true, submenu
     end
@@ -104,4 +74,4 @@ end
 
 
 
-return me
+return favdirs
