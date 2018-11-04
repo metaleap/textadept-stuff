@@ -190,13 +190,17 @@ local function setupBuftabCloseOthers()
         local curfilename = buffer.filename
         for _, buf in ipairs(_BUFFERS) do
             if buf.filename == nil or buf.filename ~= curfilename then
-                buffer.delete(buf)
+                -- we don't buffer.delete(buf) as we might lose unsaved-changes
+                view:goto_buffer(buf)
+                io.close_buffer()
             end
         end
     end }
 end
 
 
+-- all built-in menus are relocated under a single top-level menu that always
+-- shows the full file path of the currently active buf-tab
 local function setupShowCurFileFullPath()
     local menu = { title = prettifiedHomeDirPrefix(buffer.filename or buffer.tab_label) }
     for _, stdmenu in ipairs(textadept.menu.menubar) do
@@ -205,7 +209,6 @@ local function setupShowCurFileFullPath()
     textadept.menu.menubar = { menu }
 
     events.connect(events.BUFFER_AFTER_SWITCH, function()
-        ui.statusbar_text = buffer.filename
         textadept.menu.menubar[1].title = "_   " .. prettifiedHomeDirPrefix(buffer.filename or buffer.tab_label) .. '\t'
     end)
 end
