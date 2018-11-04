@@ -71,6 +71,7 @@ local function setupSaneBuftabLabels()
 
     events.connect(events.BUFFER_DELETED, ensure)
     events.connect(events.FILE_OPENED, ensure)
+    events.connect(events.BUFFER_NEW, ensure)
     events.connect(events.BUFFER_AFTER_SWITCH, ensure)
     events.connect(events.FILE_AFTER_SAVE, ensure)
     events.connect(events.UPDATE_UI, function(upd)
@@ -208,8 +209,27 @@ local function setupShowCurFileFullPath()
     end
     textadept.menu.menubar = { menu }
 
-    events.connect(events.BUFFER_AFTER_SWITCH, function()
-        textadept.menu.menubar[1].title = "_   " .. prettifiedHomeDirPrefix(buffer.filename or buffer.tab_label) .. '\t'
+    local ensure = function()
+        textadept.menu.menubar[1].title = prettifiedHomeDirPrefix(filePathParentDir(buffer.filename or buffer.tab_label)):gsub('_', '__') .. '\t'
+    end
+
+    events.connect(events.FILE_AFTER_SAVE, ensure)
+    events.connect(events.BUFFER_AFTER_SWITCH, ensure)
+    events.connect(events.FILE_OPENED, ensure)
+    events.connect(events.BUFFER_NEW, ensure)
+end
+
+
+-- keeps a buf-tab's selection state in mem such that closing it and re-opening
+-- restores caret location and/or any selections
+local function setupBuftabSelStateCapture()
+    local mostrecentbuf = buffer
+    events.connect(events.UPDATE_UI, function(upd)
+        if upd == buffer.UPDATE_SELECTION then
+            ui.statusbar_text = "sel:"..tostring(buffer.selections).." or: "..tostring(buffer.selection_empty)
+        else
+            ui.statusbar_text = "upd:"..tostring(upd)
+        end
     end)
 end
 
@@ -231,6 +251,7 @@ function me.init()
     keys.cT = setupReopenClosedBuftabs()
     keys.cO = setupRecentlyClosed()
     setupBuftabCloseOthers()
+    setupBuftabSelStateCapture()
     setupAutoEnclosers()
 end
 

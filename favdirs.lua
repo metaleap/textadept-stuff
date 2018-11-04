@@ -72,7 +72,7 @@ function me.init(favDirs)
     keys['f1']['o'] = function() showFilteredListDialogOfDirs(favDirs) end
 
     if #favDirs > 0 then
-        local menu = { title = '  ' }
+        local menu = { title = '' }
         for _, favdir in ipairs(favDirs) do
             local subdirs = subDirs(favdir)
             local submenu = { title = favdir }

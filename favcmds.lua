@@ -54,7 +54,7 @@ end
 
 function me.init(favCmds)
     if #favCmds > 0 then
-        local menu = { title = '  ' }
+        local menu = { title = '' }
         for _, favcmd in ipairs(favCmds) do
             menu[1 + #menu] = { favcmd, onCmd(favcmd) }
         end
