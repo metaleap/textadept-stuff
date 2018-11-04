@@ -11,6 +11,15 @@ local function expandHomeDirPrefix(path)
     end
     return path
 end
+local function prettifyPathForDisplay(path)
+    return path:gsub('/', ' / ')
+end
+local function doesPathHaveDotDirs(path)
+    for split in string.gmatch(path, "([^/]+)") do
+        if split:sub(1, 1) == '.' then return true end
+    end
+    return false
+end
 
 
 local function showFilteredListDialogOfFiles(dir)
@@ -18,11 +27,14 @@ local function showFilteredListDialogOfFiles(dir)
     dir = expandHomeDirPrefix(dir)
 
     lfs.dir_foreach(dir, function(fullfilepath)
-        filerelpaths[1 + #filerelpaths] = fullfilepath:sub(2 + #dir)
+        local relfilepath = fullfilepath:sub(2 + #dir)
+        if not doesPathHaveDotDirs(relfilepath) then
+            filerelpaths[1 + #filerelpaths] = prettifyPathForDisplay(relfilepath)
+        end
     end)
 
     local button, selfiles = ui.dialogs.filteredlist{
-        title = dir, width = 2345, height = 1234, select_multiple = true,
+        title = prettifyPathForDisplay(dir), width = 2345, height = 1234, select_multiple = true,
         columns = 'Files:', items = filerelpaths,
     }
     if button == 1 then
@@ -41,7 +53,10 @@ local function subDirs(dir)
 
     lfs.dir_foreach(dir, function(fullpath)
         if fullpath:sub(-1) == '/' then
-            subdirs[1 + #subdirs] = fullpath:sub(2 + #dir)
+            local subdirname = fullpath:sub(2 + #dir)
+            if subdirname:sub(1, 1) ~= '.' then
+                subdirs[1 + #subdirs] = subdirname
+            end
         end
     end, nil, 0, true)
     return subdirs
@@ -53,8 +68,8 @@ local function showFilteredListDialogOfDirs(favDirs)
     for _, favdir in ipairs(favDirs) do
         for _, subdir in ipairs(subDirs(favdir)) do
             fulldirpaths[1 + #fulldirpaths] = favdir .. '/' .. subdir
-            dirlistitems[1 + #dirlistitems] = favdir
-            dirlistitems[1 + #dirlistitems] = subdir
+            dirlistitems[1 + #dirlistitems] = prettifyPathForDisplay(favdir .. '/')
+            dirlistitems[1 + #dirlistitems] = prettifyPathForDisplay(subdir)
         end
     end
 
