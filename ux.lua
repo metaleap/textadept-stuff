@@ -1,5 +1,7 @@
 local me = {}
 
+-- to read the module, begin from the bottom-most func `init`
+
 
 local currentlyOpenedFiles = {} -- most-recently opened is last
 local recentlyClosedFiles = {} -- most-recently closed is first
@@ -220,16 +222,19 @@ local function setupShowCurFileFullPath()
 end
 
 
--- keeps a buf-tab's selection state in mem such that closing it and re-opening
--- restores caret location and/or any selections
+-- keeps a buf-tab's caret-position in mem to restore it on reopen-after-close
 local function setupBuftabSelStateCapture()
-    local mostrecentbuf = buffer
+    local caretpos = {}
+
     events.connect(events.UPDATE_UI, function(upd)
-        if upd == buffer.UPDATE_SELECTION then
-            ui.statusbar_text = "sel:"..tostring(buffer.selections).." or: "..tostring(buffer.selection_empty)
-        else
-            ui.statusbar_text = "upd:"..tostring(upd)
+        if upd == buffer.UPDATE_SELECTION and buffer.filename then
+            caretpos[buffer.filename] = buffer.current_pos
         end
+    end)
+
+    events.connect(events.FILE_OPENED, function(filepath)
+        local pos = caretpos[filepath]
+        if pos then buffer.goto_pos(pos) end
     end)
 end
 
