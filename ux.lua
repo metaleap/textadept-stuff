@@ -28,12 +28,15 @@ end
 
 -- ensures no duplicate tab labels by including file paths when necessary
 local function setupSaneBuftabLabels()
+    local namepref_orig, namesuff_orig = '    ', '    '
+    local namepref_mod, namesuff_mod = '    ', '      '
+
     local ensure = function()
         local all = {}
         for _, buf in ipairs(_BUFFERS) do
             if buf.filename then
-                local namepref, namesuff = '    ', '    '
-                if buf.modify then namepref, namesuff = '    ', '      ' end
+                local namepref, namesuff = namepref_orig, namesuff_orig
+                if buf.modify then namepref, namesuff = namepref_mod, namesuff_mod end
 
                 local filebasename = util.fsPathBaseName(buf.filename)
                 buf.tab_label = namepref .. filebasename .. namesuff
@@ -49,8 +52,8 @@ local function setupSaneBuftabLabels()
         for name, bufs in pairs(all) do
             if #bufs > 1 then -- name occurs more than once
                 for _, buf in ipairs(bufs) do
-                    local namepref, namesuff = '    ', '    '
-                    if buf.modify then namepref, namesuff = '    ', '      ' end
+                    local namepref, namesuff = namepref_orig, namesuff_orig
+                    if buf.modify then namepref, namesuff = namepref_mod, namesuff_mod end
 
                     buf.tab_label = buf.filename
                     buf.tab_label = util.fsPathPrettify(buf.tab_label, true, false)
