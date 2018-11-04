@@ -22,7 +22,7 @@ local function doesPathHaveDotDirs(path)
 end
 
 
-local function showFilteredListDialogOfFiles(dir)
+local function showFilteredListDialogOfFiles(dir, defaultFilter)
     local filerelpaths = {}
     dir = expandHomeDirPrefix(dir)
 
@@ -35,7 +35,7 @@ local function showFilteredListDialogOfFiles(dir)
 
     local button, selfiles = ui.dialogs.filteredlist{
         title = prettifyPathForDisplay(dir), width = 2345, height = 1234, select_multiple = true,
-        columns = 'Files:', items = filerelpaths,
+        text = defaultFilter, columns = 'Files:', items = filerelpaths,
     }
     if button == 1 then
         local fullfilepaths = {}
@@ -64,10 +64,11 @@ end
 
 
 local function showFilteredListDialogOfDirs(favDirs)
-    local dirlistitems, fulldirpaths = {}, {}
-    for _, favdir in ipairs(favDirs) do
+    local dirlistitems, fulldirpaths, defaultfilters = {}, {}, {}
+    for favdir, defaultfilter in pairs(favDirs) do
         for _, subdir in ipairs(subDirs(favdir)) do
             fulldirpaths[1 + #fulldirpaths] = favdir .. '/' .. subdir
+            defaultfilters[fulldirpaths[#fulldirpaths]] = defaultfilter
             dirlistitems[1 + #dirlistitems] = prettifyPathForDisplay(favdir .. '/')
             dirlistitems[1 + #dirlistitems] = prettifyPathForDisplay(subdir)
         end
@@ -78,25 +79,26 @@ local function showFilteredListDialogOfDirs(favDirs)
         columns = {'favDir', 'sub-Dir'}, items = dirlistitems,
     }
     if button == 1 then
-        showFilteredListDialogOfFiles(fulldirpaths[i])
+        showFilteredListDialogOfFiles(fulldirpaths[i], defaultfilters[fulldirpaths[i]])
     end
 end
 
 
 function me.init(favDirs)
-    keys['f1']['o'] = function() showFilteredListDialogOfDirs(favDirs) end
-
-    if #favDirs > 0 then
-        local menu = { title = '' }
-        for _, favdir in ipairs(favDirs) do
-            local subdirs = subDirs(favdir)
-            local submenu = { title = favdir }
-            for _, subdir in ipairs(subdirs) do
-                submenu[1 + #submenu] = { subdir, function() showFilteredListDialogOfFiles(favdir .. '/' .. subdir) end }
-            end
-            menu[1 + #menu] = submenu
+    local hasany, menu = false, { title = '' }
+    for favdir, defaultfilter in pairs(favDirs) do
+        local subdirs = subDirs(favdir)
+        local submenu = { title = favdir }
+        for _, subdir in ipairs(subdirs) do
+            submenu[1 + #submenu] = { subdir, function() showFilteredListDialogOfFiles(favdir .. '/' .. subdir, defaultfilter) end }
         end
+        hasany, menu[1 + #menu] = true, submenu
+    end
+    if hasany then
         textadept.menu.menubar[1 + #textadept.menu.menubar] = menu
+    end
+    return function()
+        if hasany then showFilteredListDialogOfDirs(favDirs) end
     end
 end
 

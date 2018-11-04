@@ -15,7 +15,7 @@ me.favDirs = {}
 
 function me.startUp()
     ux.init()
-    favdirs.init(me.favDirs)
+    keys.cao = favdirs.init(me.favDirs)
     favcmds.init(me.favCmds)
 end
 
