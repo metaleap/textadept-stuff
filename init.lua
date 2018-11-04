@@ -7,7 +7,6 @@ local favdirs = require 'metaleap_zentient.favdirs'
 local favcmds = require 'metaleap_zentient.favcmds'
 
 
-keys['f1'] = {}
 me.langProgs = {}
 me.favCmds = {}
 me.favDirs = {}
