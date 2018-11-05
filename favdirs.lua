@@ -1,6 +1,5 @@
 local favdirs = {}
 
-
 local util = require 'metaleap_zentient.util'
 
 
@@ -33,7 +32,8 @@ end
 
 local function showFilteredListDialogOfDirs(favDirs)
     local dirlistitems, fulldirpaths, defaultfilters = {}, {}, {}
-    for favdir, defaultfilter in pairs(favDirs) do
+    for _, fd in ipairs(favDirs) do
+        local favdir, defaultfilter = fd[1], fd[2]
         for _, subdir in ipairs(util.fsSubDirNames(util.fsPathExpandHomeDirTildePrefix(favdir))) do
             fulldirpaths[1 + #fulldirpaths] = favdir .. '/' .. subdir
             defaultfilters[fulldirpaths[#fulldirpaths]] = defaultfilter
@@ -57,7 +57,8 @@ function favdirs.init(favDirs)
     freshmenu = function()
         local lastdirpath = util.envHome
         local menu = { title = '' }
-        for favdir, defaultfilter in pairs(favDirs) do
+        for _, fd in ipairs(favDirs) do
+            local favdir, defaultfilter = fd[1], fd[2]
             if not util.fsPathHasDotNames(favdir) then
                 local subdirs = util.fsSubDirNames(util.fsPathExpandHomeDirTildePrefix(favdir))
                 local anysubs, submenu = false, { title = util.fsPathPrettify(favdir, false, true) }

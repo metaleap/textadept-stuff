@@ -1,10 +1,8 @@
 local ux = {}
-
-
-
 -- to read the module, begin from the bottom-most func `init`
 
 local util = require 'metaleap_zentient.util'
+
 
 
 local currentlyOpenedFiles = {} -- most-recently opened is last
@@ -241,27 +239,30 @@ end
 
 -- smoothing out the built-in Find functionalities a bit around the edges..
 local function setupFindRoutines()
-    local getphrase = function()
+    local getphrase = function(keepsels)
         local phrase
         if buffer.selection_start ~= buffer.selection_end then
-            if buffer.selections > 1 then
+            if buffer.selections > 1 and not keepsels then
                 buffer:set_sel(buffer.selection_start, buffer.selection_end)
             end
-            phrase = buffer:text_range(buffer.selection_start, buffer.selection_end)
+            phrase = util.bufSelText()
             ui.find.find_entry_text = phrase
         end
         return phrase
     end
 
     events.connect(events.FIND, function(phrase) ui.find.find_entry_text = phrase end)
-    local findincr, finddiag = function()
+    local findincr, finddiag, findword = function()
         ui.find.find_incremental(getphrase(), true, true)
     end, function()
         ui.find.in_files, ui.find.match_case, ui.find.whole_word, ui.find.regex = false, false, false, false
         getphrase()
         ui.find.focus()
+    end, function()
+        textadept.editing.select_word()
+        getphrase(true)
     end
-    return findincr, finddiag
+    return findincr, finddiag, findword
 end
 
 
@@ -297,7 +298,7 @@ function ux.init()
     setupBuftabCloseOthers()
     setupBuftabSelStateRecall()
     setupAutoEnclosers()
-    keys.cf, keys.cF = setupFindRoutines()
+    keys.cf, keys.cF, keys.cd = setupFindRoutines()
     setupHoverTips()
 end
 

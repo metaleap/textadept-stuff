@@ -63,5 +63,11 @@ function util.fsSubDirNames(dirFullPath)
 end
 
 
+-- because get_sel_text concats all multiple selections, here's one that won't:
+function util.bufSelText()
+    return buffer:text_range(buffer.selection_start, buffer.selection_end)
+end
+
+
 
 return util
