@@ -68,6 +68,7 @@ local function setupSaneBuftabLabels()
     events.connect(events.BUFFER_NEW, ensure)
     events.connect(events.BUFFER_AFTER_SWITCH, ensure)
     events.connect(events.FILE_AFTER_SAVE, ensure)
+    events.connect(events.CHAR_ADDED, ensure)
     events.connect(events.UPDATE_UI, function(upd)
         if upd == buffer.UPDATE_CONTENT then ensure() end
     end)
@@ -239,6 +240,32 @@ local function setupBuftabSelStateRecall()
 end
 
 
+-- smoothing out the built-in Find functionality a bit around the edges..
+local function setupFindRoutines()
+    local getphrase = function()
+        local phrase
+        if buffer.selection_start ~= buffer.selection_end then
+            if buffer.selections > 1 then
+                buffer:set_sel(buffer.selection_start, buffer.selection_end)
+            end
+            phrase = buffer:text_range(buffer.selection_start, buffer.selection_end)
+            ui.find.find_entry_text = phrase -- important for the find_incremental case
+        end
+        return phrase
+    end
+
+    events.connect(events.FIND, function(phrase) ui.find.find_entry_text = phrase end)
+    local findincr, finddiag = function()
+        ui.find.find_incremental(getphrase(), true, true)
+    end, function()
+        ui.find.in_files, ui.find.match_case, ui.find.whole_word, ui.find.regex = false, false, false, false
+        getphrase()
+        ui.find.focus()
+    end
+    return findincr, finddiag
+end
+
+
 function ux.init()
     keys.a0 = function() goToBuftab(0) end
     keys.a1 = function() goToBuftab(1) end
@@ -258,6 +285,7 @@ function ux.init()
     setupBuftabCloseOthers()
     setupBuftabSelStateRecall()
     setupAutoEnclosers()
+    keys.cf, keys.cF = setupFindRoutines()
 end
 
 
