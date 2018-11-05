@@ -24,7 +24,7 @@ local function showFilteredListDialogOfFiles(dir, defaultFilter)
     if button == 1 then
         local fullfilepaths = {}
         for _, idx in ipairs(selfiles) do
-            fullfilepaths[1 + #fullfilepaths] = dir .. filerelpaths[idx]
+            fullfilepaths[1 + #fullfilepaths] = dir .. '/' .. filerelpaths[idx]
         end
         io.open_file(fullfilepaths)
     end
@@ -53,25 +53,27 @@ end
 
 
 function favdirs.init(favDirs)
-    local menu = { title = '' }
-    for favdir, defaultfilter in pairs(favDirs) do
-        if not util.fsPathHasDotNames(favdir) then
-            local subdirs = util.fsSubDirNames(util.fsPathExpandHomeDirTildePrefix(favdir))
-            local anysubs, submenu = false, { title = util.fsPathPrettify(favdir, false, true) }
-            for _, subdir in ipairs(subdirs) do
-                if not util.fsPathHasDotNames(subdir) then
-                    anysubs, submenu[1 + #submenu] = true, { util.fsPathPrettify(subdir, false, true), function()
-                        showFilteredListDialogOfFiles(favdir .. '/' .. subdir, defaultfilter)
-                    end }
-                end
-            end
-            if anysubs then menu[1 + #menu] = submenu end
-        end
-    end
-
-    do
+    local freshmenu
+    freshmenu = function()
         local lastdirpath = util.envHome
-        menu[1 + #menu] = { '(Elsewhere...)', function()
+        local menu = { title = '' }
+        for favdir, defaultfilter in pairs(favDirs) do
+            if not util.fsPathHasDotNames(favdir) then
+                local subdirs = util.fsSubDirNames(util.fsPathExpandHomeDirTildePrefix(favdir))
+                local anysubs, submenu = false, { title = util.fsPathPrettify(favdir, false, true) }
+                for _, subdir in ipairs(subdirs) do
+                    if not util.fsPathHasDotNames(subdir) then
+                        anysubs, submenu[1 + #submenu] = true, { util.fsPathPrettify(subdir, false, true), function()
+                            showFilteredListDialogOfFiles(favdir .. '/' .. subdir, defaultfilter)
+                            freshmenu()
+                        end }
+                    end
+                end
+                if anysubs then menu[1 + #menu] = submenu end
+            end
+        end
+
+        menu[1 + #menu] = { '(Other...)', function()
             local dirpath = ui.dialogs.fileselect{
                 title = 'Specify directory:', select_only_directories = true, with_directory = lastdirpath,
             }
@@ -79,10 +81,13 @@ function favdirs.init(favDirs)
                 lastdirpath = dirpath
                 showFilteredListDialogOfFiles(dirpath, '')
             end
+            freshmenu()
         end }
+
+        textadept.menu.menubar[2] = menu
     end
 
-    textadept.menu.menubar[1 + #textadept.menu.menubar] = menu
+    freshmenu()
     return function()
         showFilteredListDialogOfDirs(favDirs)
     end
