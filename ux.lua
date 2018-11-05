@@ -25,36 +25,31 @@ end
 
 -- ensures no duplicate tab labels by including file paths when necessary
 local function setupSaneBuftabLabels()
-    local namepref_orig, namesuff_orig = '    ', '    '
-    local namepref_mod, namesuff_mod = '    ', '      '
+    local relabel = function(label, bufdirty)
+        local namepref, namesuff = '    ', '    '
+        if bufdirty then namepref, namesuff = '    ', '      ' end
+        return namepref..label..namesuff
+    end
 
     local ensure = function()
         local all = {}
         for _, buf in ipairs(_BUFFERS) do
             if buf.filename then
-                local namepref, namesuff = namepref_orig, namesuff_orig
-                if buf.modify then namepref, namesuff = namepref_mod, namesuff_mod end
-
-                local filebasename = util.fsPathBaseName(buf.filename)
-                buf.tab_label = namepref .. filebasename .. namesuff
+                filebasename = util.fsPathBaseName(buf.filename)
                 local byname = all[filebasename]
                 if byname == nil then
                     all[filebasename] = { buf }
+                    buf.tab_label = relabel(filebasename, buf.modify)
                 else
                     byname[1 + #byname] = buf
                 end
             end
         end
 
-        for name, bufs in pairs(all) do
+        for _, bufs in pairs(all) do
             if #bufs > 1 then -- name occurs more than once
                 for _, buf in ipairs(bufs) do
-                    local namepref, namesuff = namepref_orig, namesuff_orig
-                    if buf.modify then namepref, namesuff = namepref_mod, namesuff_mod end
-
-                    buf.tab_label = buf.filename
-                    buf.tab_label = util.fsPathPrettify(buf.tab_label, true, false)
-                    buf.tab_label = namepref .. buf.tab_label .. namesuff
+                    buf.tab_label = relabel(util.fsPathPrettify(buf.filename, true, false), buf.modify)
                 end
             end
         end
