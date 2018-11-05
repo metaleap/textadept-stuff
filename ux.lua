@@ -9,7 +9,6 @@ local util = require 'metaleap_zentient.util'
 
 local currentlyOpenedFiles = {} -- most-recently opened is last
 local recentlyClosedFiles = {} -- most-recently closed is first
-local envHomePrefix = os.getenv("HOME") .. '/'
 
 
 -- allows alt+1, alt+2 .. alt+0 to switch to that tab
@@ -196,7 +195,7 @@ end
 
 
 -- all built-in menus are relocated under a single top-level menu that always
--- shows the full file path of the currently active buf-tab
+-- shows the full dir path of the currently active buf-tab
 local function setupShowCurFileFullPath()
     local menutitle = function()
         return util.fsPathPrettify(util.fsPathParentDir(buffer.filename or buffer.tab_label), true, true):gsub('_', '__') .. '\t'
@@ -266,6 +265,7 @@ local function setupFindRoutines()
 end
 
 
+-- sets up hover-tips for mouse-dwelling-on-symbol
 local function setupHoverTips()
     events.connect(events.DWELL_START, function(pos)
         if buffer:call_tip_active() then
