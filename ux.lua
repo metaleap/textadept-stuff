@@ -240,7 +240,7 @@ local function setupBuftabSelStateRecall()
 end
 
 
--- smoothing out the built-in Find functionality a bit around the edges..
+-- smoothing out the built-in Find functionalities a bit around the edges..
 local function setupFindRoutines()
     local getphrase = function()
         local phrase
@@ -249,7 +249,7 @@ local function setupFindRoutines()
                 buffer:set_sel(buffer.selection_start, buffer.selection_end)
             end
             phrase = buffer:text_range(buffer.selection_start, buffer.selection_end)
-            ui.find.find_entry_text = phrase -- important for the find_incremental case
+            ui.find.find_entry_text = phrase
         end
         return phrase
     end
@@ -263,6 +263,18 @@ local function setupFindRoutines()
         ui.find.focus()
     end
     return findincr, finddiag
+end
+
+
+local function setupHoverTips()
+    events.connect(events.DWELL_START, function(pos)
+        if buffer:call_tip_active() then
+            buffer:call_tip_cancel()
+        end
+        if pos >= 0 then
+            textadept.editing.show_documentation(pos)
+        end
+    end)
 end
 
 
@@ -286,6 +298,7 @@ function ux.init()
     setupBuftabSelStateRecall()
     setupAutoEnclosers()
     keys.cf, keys.cF = setupFindRoutines()
+    setupHoverTips()
 end
 
 
