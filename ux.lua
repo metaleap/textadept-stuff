@@ -60,10 +60,10 @@ local function setupSaneBuftabLabels()
     events.connect(events.BUFFER_NEW, ensure)
     events.connect(events.BUFFER_AFTER_SWITCH, ensure)
     events.connect(events.FILE_AFTER_SAVE, ensure)
-    events.connect(events.CHAR_ADDED, ensure)
     events.connect(events.UPDATE_UI, function(upd)
         if upd == buffer.UPDATE_CONTENT then ensure() end
     end)
+    events.connect(events.CHAR_ADDED, ensure) -- workaround for enter / del
 
     ensure()
 end
@@ -274,6 +274,23 @@ local function setupHoverTips()
 end
 
 
+-- keep auto-highlighting the current symbol or word as the caret moves
+local function setupAutoHighlight()
+    local on = function(upd)
+        if (not upd) or upd == buffer.UPDATE_SELECTION or upd == buffer.UPDATE_CONTENT then
+            if buffer.selection_empty and buffer.selections == 1 then
+                textadept.editing.highlight_word(true)
+            elseif textadept.editing.clear_highlighted_words then
+                textadept.editing.clear_highlighted_words()
+            end
+        end
+    end
+
+    events.connect(events.UPDATE_UI, on)
+    events.connect(events.CHAR_ADDED, on) -- workaround for enter / del
+end
+
+
 function ux.init()
     keys.a0 = function() goToBuftab(0) end
     keys.a1 = function() goToBuftab(1) end
@@ -295,6 +312,7 @@ function ux.init()
     setupAutoEnclosers()
     keys.cf, keys.cF, keys.cd = setupFindRoutines()
     setupHoverTips()
+    setupAutoHighlight()
 end
 
 
