@@ -32,10 +32,11 @@ end
 
 -- ensures no duplicate tab labels by including file paths when necessary
 local function setupSaneBuftabLabels()
-    local relabel = function(label, bufdirty)
+    local relabel = function(buf, label)
         local namepref, namesuff = '    ', '    '
-        if bufdirty then namepref, namesuff = '    ', '      ' end
-        return namepref..label..namesuff
+        if buf.modify then namepref, namesuff = '    ', '      ' end
+        local tablabel = namepref..label..namesuff
+        if buf.tab_label ~= tablabel then buf.tab_label = tablabel end
     end
 
     local ensure = function()
@@ -46,7 +47,7 @@ local function setupSaneBuftabLabels()
                 local byname = all[filebasename]
                 if byname == nil then
                     all[filebasename] = { buf }
-                    buf.tab_label = relabel(filebasename, buf.modify)
+                    relabel(buf, filebasename)
                 else
                     byname[1 + #byname] = buf
                 end
@@ -56,7 +57,7 @@ local function setupSaneBuftabLabels()
         for _, bufs in pairs(all) do
             if #bufs > 1 then -- name occurs more than once
                 for _, buf in ipairs(bufs) do
-                    buf.tab_label = relabel(util.fsPathPrettify(buf.filename, true, false), buf.modify)
+                    relabel(buf, util.fsPathPrettify(buf.filename, true, false))
                 end
             end
         end
@@ -118,6 +119,15 @@ end
 -- opens dialog to select "recent files" to open, but sorted by most-recently-
 -- closed and without listing files that are already currently opened
 local function setupRecentlyClosed()
+    events.connect(events.RESET_BEFORE, function(bag)
+        bag['metaleap_zentient.ux.recentlyClosedFiles'] = recentlyClosedFiles
+    end)
+
+    events.connect(events.RESET_AFTER, function(bag)
+        local recentlyclosedfiles = bag['metaleap_zentient.ux.recentlyClosedFiles']
+        if recentlyclosedfiles then recentlyClosedFiles = recentlyclosedfiles  end
+    end)
+
     return function()
         if #recentlyClosedFiles > 0 then
             local filelistitems = {}
@@ -234,6 +244,15 @@ local function setupBuftabSelStateRecall()
         if bufstate then
             for _, p in ipairs(bufprops) do buffer[p] = bufstate[p] end
         end
+    end)
+
+    events.connect(events.RESET_BEFORE, function(bag)
+        bag['metaleap_zentient.ux.setupBuftabSelStateRecall.bufstates'] = bufstates
+    end)
+
+    events.connect(events.RESET_AFTER, function(bag)
+        local bs = bag['metaleap_zentient.ux.setupBuftabSelStateRecall.bufstates']
+        if bs then bufstates = bs end
     end)
 end
 
