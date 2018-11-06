@@ -308,7 +308,7 @@ function ux.init()
     setupAutoEnclosers()
     keys.cf, keys.cF, keys.cd = setupFindRoutines()
     setupHoverTips()
-    setupAutoHighlight()
+    --setupAutoHighlight()
 end
 
 

@@ -4,6 +4,9 @@ local util = require 'metaleap_zentient.util'
 
 
 
+favdirs.keys = 'cao'
+
+
 local function showFilteredListDialogOfFiles(dir, defaultFilter)
     local filerelpaths, filerelpathitems = {}, {}
     dir = util.fsPathExpandHomeDirTildePrefix(dir)
@@ -87,9 +90,7 @@ function favdirs.init(favDirs)
     end
 
     freshmenu()
-    return function()
-        showFilteredListDialogOfDirs(favDirs)
-    end
+    keys['favdirs.keys'] = function() showFilteredListDialogOfDirs(favDirs) end
 end
 
 
