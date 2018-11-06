@@ -69,6 +69,12 @@ function util.bufSelText()
 end
 
 
+function util.clearHighlightedWords()
+    buffer.indicator_current = textadept.editing.INDIC_HIGHLIGHT
+    buffer:indicator_clear_range(0, buffer.length)
+end
+
+
 function util.menuable(text)
     return text:gsub('_', '__')
 end

@@ -61,9 +61,8 @@ local function setupSaneBuftabLabels()
     events.connect(events.BUFFER_AFTER_SWITCH, ensure)
     events.connect(events.FILE_AFTER_SAVE, ensure)
     events.connect(events.UPDATE_UI, function(upd)
-        if upd == buffer.UPDATE_CONTENT then ensure() end
+        if upd == buffer.UPDATE_CONTENT or upd == 3 then ensure() end
     end)
-    events.connect(events.CHAR_ADDED, ensure) -- workaround for enter / del
 
     ensure()
 end
@@ -215,7 +214,7 @@ end
 local function setupBuftabSelStateRecall()
     local bufstates, bufprops = {}, { 'anchor', 'current_pos', 'first_visible_line', 'x_offset' }
 
-    events.connect(events.UPDATE_UI, function(upd)
+    events.connect(events.UPDATE_UI, function()
         if buffer.filename then
             local bufstate = {}
             for _, p in ipairs(bufprops) do bufstate[p] = buffer[p] end
@@ -276,18 +275,15 @@ end
 
 -- keep auto-highlighting the current symbol or word as the caret moves
 local function setupAutoHighlight()
-    local on = function(upd)
-        if (not upd) or upd == buffer.UPDATE_SELECTION or upd == buffer.UPDATE_CONTENT then
+    events.connect(events.UPDATE_UI, function(upd)
+        if upd == buffer.UPDATE_SELECTION or upd == buffer.UPDATE_CONTENT or upd == 3 then
             if buffer.selection_empty and buffer.selections == 1 then
-                textadept.editing.highlight_word(true)
-            elseif textadept.editing.clear_highlighted_words then
-                textadept.editing.clear_highlighted_words()
+                textadept.editing.highlight_word()
+            else
+                util.clearHighlightedWords()
             end
         end
-    end
-
-    events.connect(events.UPDATE_UI, on)
-    events.connect(events.CHAR_ADDED, on) -- workaround for enter / del
+    end)
 end
 
 
