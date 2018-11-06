@@ -14,12 +14,15 @@ _M.metaleap_zentient.favDirs = {
 }   -- etc..
 
 _M.metaleap_zentient.favCmds = {
-    { 'fortune | cowsay', false },
-    { 'cat', true }, -- `true` to pipe current-buffer's content (or selection) to this command
-
-    -- named-vars via §(myName) -- will prompt user unless predefined autos (like the _file* names below)
-    { 'echo "Foo: §(foo) Name:§(_fileName) Bar:§(bar) Dir:§(_fileDir) Baz:§(baz) Full:§(_filePath)"',
-        false },
+        -- use `cmd` for one-command-plus-args, or `sh` for pipes / env-vars / multiple-commands etc.
+        -- if `pipeBufText`, then the current buffer's selection (or if none, full content) is written to the command's own stdin
+        { sh = 'fortune | cowsay' },
+        { cmd = 'cowsay', pipeBufText = true },
+        { cmd = 'figlet', pipeBufText = true },
+        { cmd = 'cat', pipeBufText = true },
+        { sh = 'rev | rev | cowsay', pipeBufText = true },
+        { cmd = 'echo "Foo: §(foo) Name:§(_fileName) Bar:§(bar) Dir:§(_fileDir) Baz:§(baz) Full:§(_filePath) Full:§(foo)§(bar)§(baz)"' },
+        { sh = 'git add -A && git commit -m "§(commitMsg)" && git push' },
 }   -- etc..
 
 events.connect(events.INITIALIZED, _M.metaleap_zentient.startUp)

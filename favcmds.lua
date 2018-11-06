@@ -60,6 +60,26 @@ end
 local function onCmd(favCmd, pipeBufOrSel)
     return function()
         local cmd = fillInCmd(favCmd)
+        if #cmd > 0 then
+            local proc = os.spawn(cmd, function(stdout)
+                ui.print(stdout)
+            end, function(stderr)
+                ui.print(stderr)
+            end, function(exit)
+                if exit and exit ~= 0 then ui.print(cmd..' exit code: '..tostring(exit)) end
+            end)
+            if pipeBufOrSel then
+                proc:write(util.bufSelText(true))
+            end
+            proc:close()
+        end
+    end
+end
+
+
+local function onSh(favCmd, pipeBufOrSel)
+    return function()
+        local cmd = fillInCmd(favCmd)
         if pipeBufOrSel then
             if buffer.filename and buffer.selection_empty and not buffer.modify then
                 cmd = "cat '" .. buffer.filename .. "' | " .. cmd
@@ -83,8 +103,11 @@ function me.init(favCmds)
     if #favCmds > 0 then
         local menu = { title = '' }
         for _, fc in ipairs(favCmds) do
-            local favcmd, shouldpipe = fc[1], fc[2]
-            menu[1 + #menu] = { util.menuable(favcmd), onCmd(favcmd, shouldpipe) }
+            if fc.sh then
+                menu[1 + #menu] = { util.menuable(fc.sh), onSh(fc.sh, fc.pipeBufText) }
+            elseif fc.cmd then
+                menu[1 + #menu] = { util.menuable(fc.cmd), onCmd(fc.cmd, fc.pipeBufText) }
+            end
         end
         textadept.menu.menubar[1 + #textadept.menu.menubar] = menu
     end

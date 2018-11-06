@@ -64,7 +64,10 @@ end
 
 
 -- because get_sel_text concats all multiple selections, here's one that won't:
-function util.bufSelText()
+function util.bufSelText(fullTextIfNoSelection)
+    if buffer.selection_empty then
+        return fullTextIfNoSelection and buffer:get_text() or ''
+    end
     return buffer:text_range(buffer.selection_start, buffer.selection_end)
 end
 
