@@ -66,7 +66,7 @@ local function onCmd(favCmd, pipeBufOrSel)
             end, function(stderr)
                 ui.print(stderr)
             end, function(exit)
-                if exit and exit ~= 0 then ui.print(cmd..' exit code: '..tostring(exit)) end
+                ui.print(cmd..' exit code: '..tostring(exit))
             end)
             if pipeBufOrSel then
                 proc:write(util.bufSelText(true))
