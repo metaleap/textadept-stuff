@@ -61,7 +61,7 @@ local function setupSaneBuftabLabels()
     events.connect(events.BUFFER_AFTER_SWITCH, ensure)
     events.connect(events.FILE_AFTER_SAVE, ensure)
     events.connect(events.UPDATE_UI, function(upd)
-        if upd == buffer.UPDATE_CONTENT or upd == 3 then ensure() end
+        if util.bufIsUpdateOf(upd, buffer.UPDATE_CONTENT) then ensure() end
     end)
 
     ensure()
@@ -276,11 +276,11 @@ end
 -- keep auto-highlighting the current symbol or word as the caret moves
 local function setupAutoHighlight()
     events.connect(events.UPDATE_UI, function(upd)
-        if upd == buffer.UPDATE_SELECTION or upd == buffer.UPDATE_CONTENT or upd == 3 then
+        if util.bufIsUpdateOf(upd, buffer.UPDATE_CONTENT, buffer.UPDATE_SELECTION) then
             if buffer.selection_empty and buffer.selections == 1 then
                 textadept.editing.highlight_word()
             else
-                util.clearHighlightedWords()
+                util.bufClearHighlightedWords()
             end
         end
     end)

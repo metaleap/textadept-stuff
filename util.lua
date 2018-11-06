@@ -69,9 +69,21 @@ function util.bufSelText()
 end
 
 
-function util.clearHighlightedWords()
+function util.bufClearHighlightedWords()
     buffer.indicator_current = textadept.editing.INDIC_HIGHLIGHT
     buffer:indicator_clear_range(0, buffer.length)
+end
+
+
+function util.bufIsUpdateOf(upd, ...)
+    if upd then
+        for _, chk in ipairs({...}) do
+            if upd&chk == chk then
+                return true
+            end
+        end
+    end
+    return false
 end
 
 

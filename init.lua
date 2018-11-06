@@ -16,7 +16,7 @@ me.favDirs = {}
 function me.startUp()
     keys.esc = function()
         buffer:cancel()
-        util.clearHighlightedWords()
+        util.bufClearHighlightedWords()
     end
 
     ux.init()
