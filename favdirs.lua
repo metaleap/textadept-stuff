@@ -90,7 +90,7 @@ function favdirs.init(favDirs)
     end
 
     freshmenu()
-    keys['favdirs.keys'] = function() showFilteredListDialogOfDirs(favDirs) end
+    keys[favdirs.keys] = function() showFilteredListDialogOfDirs(favDirs) end
 end
 
 

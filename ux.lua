@@ -5,6 +5,13 @@ local util = require 'metaleap_zentient.util'
 
 
 
+ux.keysReopenClosedBuftabs = 'cT'
+ux.keysReopenClosedDialog = 'cO'
+ux.keysFindIncr = 'cf'
+ux.keysFindDiag = 'cF'
+ux.keysFindWord = 'cd'
+
+
 local currentlyOpenedFiles = {} -- most-recently opened is last
 local recentlyClosedFiles = {} -- most-recently closed is first
 
@@ -301,12 +308,12 @@ function ux.init()
 
     setupShowCurFileFullPath()
     setupSaneBuftabLabels()
-    keys.cT = setupReopenClosedBuftabs()
-    keys.cO = setupRecentlyClosed()
+    keys[ux.keysReopenClosedBuftabs] = setupReopenClosedBuftabs()
+    keys[ux.keysReopenClosedDialog] = setupRecentlyClosed()
     setupBuftabCloseOthers()
     setupBuftabSelStateRecall()
     setupAutoEnclosers()
-    keys.cf, keys.cF, keys.cd = setupFindRoutines()
+    keys[ux.keysFindIncr], keys[ux.keysFindDiag], keys[ux.keysFindWord] = setupFindRoutines()
     setupHoverTips()
     --setupAutoHighlight()
 end
