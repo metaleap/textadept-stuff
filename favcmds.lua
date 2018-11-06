@@ -84,7 +84,7 @@ function me.init(favCmds)
         local menu = { title = '' }
         for _, fc in ipairs(favCmds) do
             local favcmd, shouldpipe = fc[1], fc[2]
-            menu[1 + #menu] = { favcmd, onCmd(favcmd, shouldpipe) }
+            menu[1 + #menu] = { util.menuable(favcmd), onCmd(favcmd, shouldpipe) }
         end
         textadept.menu.menubar[1 + #textadept.menu.menubar] = menu
     end

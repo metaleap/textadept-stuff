@@ -59,19 +59,17 @@ function favdirs.init(favDirs)
         local menu = { title = '' }
         for _, fd in ipairs(favDirs) do
             local favdir, defaultfilter = fd[1], fd[2]
-            if not util.fsPathHasDotNames(favdir) then
-                local subdirs = util.fsSubDirNames(util.fsPathExpandHomeDirTildePrefix(favdir))
-                local anysubs, submenu = false, { title = util.fsPathPrettify(favdir, false, true) }
-                for _, subdir in ipairs(subdirs) do
-                    if not util.fsPathHasDotNames(subdir) then
-                        anysubs, submenu[1 + #submenu] = true, { util.fsPathPrettify(subdir, false, true), function()
-                            showFilteredListDialogOfFiles(favdir .. '/' .. subdir, defaultfilter)
-                            freshmenu()
-                        end }
-                    end
+            local subdirs = util.fsSubDirNames(util.fsPathExpandHomeDirTildePrefix(favdir))
+            local anysubs, submenu = false, { title = util.menuable(util.fsPathPrettify(favdir, false, true)) }
+            for _, subdir in ipairs(subdirs) do
+                if not util.fsPathHasDotNames(subdir) then
+                    anysubs, submenu[1 + #submenu] = true, { util.menuable(util.fsPathPrettify(subdir, false, true)), function()
+                        showFilteredListDialogOfFiles(favdir .. '/' .. subdir, defaultfilter)
+                        freshmenu()
+                    end }
                 end
-                if anysubs then menu[1 + #menu] = submenu end
             end
+            if anysubs then menu[1 + #menu] = submenu end
         end
 
         menu[1 + #menu] = { '(Other...)', function()

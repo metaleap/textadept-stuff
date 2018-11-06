@@ -69,5 +69,10 @@ function util.bufSelText()
 end
 
 
+function util.menuable(text)
+    return text:gsub('_', '__')
+end
+
+
 
 return util
