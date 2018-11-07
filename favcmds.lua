@@ -1,6 +1,7 @@
-local me = {}
+local favcmds = {}
 
 local util = require 'metaleap_zentient.util'
+local notify = require 'metaleap_zentient.notify'
 
 
 
@@ -72,8 +73,10 @@ local function onCmd(favCmd, pipeBufOrSel)
                     end
                 end
             end
+
             local proc = os.spawn(cmd, println, println, function(exit)
                 if line ~= '' then ui._print(cmd, line) end
+                event.emit(notify.EVENT, cmd .. ' exited with code: ' .. tostring(exit))
             end)
             if pipeBufOrSel then
                 proc:write(util.bufSelText(true))
@@ -106,7 +109,7 @@ local function onSh(favCmd, pipeBufOrSel)
 end
 
 
-function me.init(favCmds)
+function favcmds.init(favCmds)
     if #favCmds > 0 then
         local menu = { title = '' }
         for _, fc in ipairs(favCmds) do
@@ -122,4 +125,4 @@ end
 
 
 
-return me
+return favcmds
