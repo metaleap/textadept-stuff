@@ -26,9 +26,14 @@ end
 
 
 function notify.emit(msg)
-    ui.print(#menu)
     timeLastEmit = os.time()
     menu.title = strIcon..' '..util.uxStrMenuable(msg)
+
+    if 1 == #menu then
+        menu[1 + #menu] = { '' }
+        menu[1 + #menu] = { '', clearMenu }
+    end
+
     table.insert(menu, 1, { util.uxStrMenuable(util.uxStrNowTime() .. msg),
                             function() showDetails(msg) end })
     ensureMenu()
