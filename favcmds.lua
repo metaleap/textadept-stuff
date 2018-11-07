@@ -62,11 +62,10 @@ local function onCmd(favCmd, pipeBufOrSel)
         local cmd = fillInCmd(favCmd)
         if #cmd > 0 then
             local proc = os.spawn(cmd, function(stdout)
-                ui.print(stdout)
+                ui._print(cmd, stdout)
             end, function(stderr)
-                ui.print(stderr)
+                ui._print(cmd, stderr)
             end, function(exit)
-                ui.print(cmd..' exit code: '..tostring(exit))
             end)
             if pipeBufOrSel then
                 proc:write(util.bufSelText(true))
