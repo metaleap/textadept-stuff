@@ -101,7 +101,7 @@ local function onSh(favCmd, pipeBufOrSel)
         if #cmd > 0 then
             f = io.popen(cmd, 'r')
             for ln in f:lines() do
-                ui.print(ln)
+                ui._print(cmd, ln)
             end
             f:close()
         end
