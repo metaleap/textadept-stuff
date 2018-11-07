@@ -27,7 +27,7 @@ local function showFilteredListDialogOfFiles(dir, defaultFilter)
     if button == 1 then
         local fullfilepaths = {}
         for _, idx in ipairs(selfiles) do
-            fullfilepaths[1 + #fullfilepaths] = dir .. '/' .. filerelpaths[idx]
+            fullfilepaths[1 + #fullfilepaths] = util.fsPathJoin(dir, filerelpaths[idx])
         end
         io.open_file(fullfilepaths)
     end
@@ -39,7 +39,7 @@ local function showFilteredListDialogOfDirs(favDirs)
     for _, fd in ipairs(favDirs) do
         local favdir, defaultfilter = fd[1], fd[2]
         for _, subdir in ipairs(util.fsSubDirNames(util.fsPathExpandHomeDirTildePrefix(favdir))) do
-            fulldirpaths[1 + #fulldirpaths] = favdir .. '/' .. subdir
+            fulldirpaths[1 + #fulldirpaths] = util.fsPathJoin(favdir, subdir)
             defaultfilters[fulldirpaths[#fulldirpaths]] = defaultfilter
             dirlistitems[1 + #dirlistitems] = util.fsPathPrettify(favdir .. '/', false, true)
             dirlistitems[1 + #dirlistitems] = util.fsPathPrettify(subdir, false, true)
@@ -70,7 +70,7 @@ function favdirs.init(favDirs)
             for _, subdir in ipairs(subdirs) do
                 if not util.fsPathHasDotNames(subdir) then
                     anysubs, submenu[1 + #submenu] = true, { util.uxStrMenuable(util.fsPathPrettify(subdir, false, true)), function()
-                        showFilteredListDialogOfFiles(favdir .. '/' .. subdir, defaultfilter)
+                        showFilteredListDialogOfFiles(util.fsPathJoin(favdir, subdir), defaultfilter)
                         freshmenu()
                     end }
                 end

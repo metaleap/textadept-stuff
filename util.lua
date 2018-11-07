@@ -6,6 +6,27 @@ envHome = os.getenv("HOME")
 local envHomeSlash = envHome .. '/'
 
 
+function util.fsPathJoin(...)
+    local parts = {...}
+    local path = ''
+    ui.statusbar_text = tostring(#parts)
+    for i, part in ipairs(parts) do
+        if part then
+            while i > 1 and part:sub(1, 1) == '/' do
+                part = part:sub(2)
+            end
+            while part:sub(-1) == '/' do
+                part = part:sub(1, -2)
+            end
+            if #part > 0 then
+                path = path .. part .. '/'
+            end
+        end
+    end
+    return path:sub(1, -2)
+end
+
+
 -- if `path` is prefixed with `~/`, changes the prefix to (actual, current) `$HOME/`
 function util.fsPathExpandHomeDirTildePrefix(path)
     if path:sub(1, 2) == '~/' then
@@ -16,12 +37,12 @@ end
 
 
 -- if `homeTilde` and `path` is prefixed with (actual, current) `$HOME/`, the prefix is changed to `~/`.
--- if `slashSpaces`, all slashes get surrounded by white-space.
-function util.fsPathPrettify(path, homeTilde, slashSpaces)
+-- if `spacedSlashes`, all slashes get surrounded by white-space.
+function util.fsPathPrettify(path, homeTilde, spacedSlashes)
     if homeTilde and path:sub(1, #envHomeSlash) == envHomeSlash then
         path = '~' .. path:sub(#envHomeSlash)
     end
-    if slashSpaces then
+    if spacedSlashes then
         path = path:gsub('/', ' / ')
     end
     return path
