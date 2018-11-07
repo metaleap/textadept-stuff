@@ -78,6 +78,7 @@ function favdirs.init(favDirs)
             if anysubs then menu[1 + #menu] = submenu end
         end
 
+        menu[1 + #menu] = { '' }
         menu[1 + #menu] = { '(Other...)', function()
             local dirpath = ui.dialogs.fileselect{
                 title = 'Specify directory:', select_only_directories = true, with_directory = lastdirpath,
@@ -89,6 +90,7 @@ function favdirs.init(favDirs)
             freshmenu()
         end }
 
+        menu[1 + #menu] = { '' }
         menu[1 + #menu] = { '', function() end }
         textadept.menu.menubar[menuPos] = menu
     end

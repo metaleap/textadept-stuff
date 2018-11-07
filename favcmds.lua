@@ -126,6 +126,7 @@ function favcmds.init(favCmds)
                 menu[1 + #menu] = { util.uxStrMenuable(fc.cmd), onCmd(fc.cmd, fc.pipeBufText) }
             end
         end
+        menu[1 + #menu] = { '' }
         menu[1 + #menu] = { '', function() end }
         textadept.menu.menubar[menuPos] = menu
     end

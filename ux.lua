@@ -214,6 +214,7 @@ local function setupShowCurFileFullPath()
     for _, stdmenu in ipairs(textadept.menu.menubar) do
         menu[1 + #menu] = stdmenu
     end
+    menu[1 + #menu] = { '' }
     menu[1 + #menu] = { '', function() end }
     textadept.menu.menubar = { menu }
 
