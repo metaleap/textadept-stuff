@@ -86,7 +86,7 @@ function favdirs.init(favDirs)
             freshmenu()
         end }
 
-        textadept.menu.menubar[2] = menu
+        textadept.menu.menubar[3] = menu
     end
 
     freshmenu()

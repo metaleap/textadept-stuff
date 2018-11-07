@@ -119,7 +119,7 @@ function favcmds.init(favCmds)
                 menu[1 + #menu] = { util.menuable(fc.cmd), onCmd(fc.cmd, fc.pipeBufText) }
             end
         end
-        textadept.menu.menubar[1 + #textadept.menu.menubar] = menu
+        textadept.menu.menubar[2] = menu
     end
 end
 
