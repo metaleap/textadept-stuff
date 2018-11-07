@@ -2,8 +2,17 @@ local util = {}
 
 
 
-envHome = os.getenv("HOME")
-local envHomeSlash = envHome .. '/'
+util.envHome = os.getenv("HOME")
+util.eventBufSwitch = 'metaleap_zentient.EVENT_BUFSWITCH'
+local envHomeSlash = util.envHome .. '/'
+
+
+do
+    local emitEventBufSwitch = function() events.emit(util.eventBufSwitch) end
+    events.connect(events.FILE_OPENED, emitEventBufSwitch)
+    events.connect(events.BUFFER_NEW, emitEventBufSwitch)
+    events.connect(events.BUFFER_AFTER_SWITCH, emitEventBufSwitch)
+end
 
 
 function util.fsPathJoin(...)
@@ -30,7 +39,7 @@ end
 -- if `path` is prefixed with `~/`, changes the prefix to (actual, current) `$HOME/`
 function util.fsPathExpandHomeDirTildePrefix(path)
     if path:sub(1, 2) == '~/' then
-        path = envHome .. path:sub(2)
+        path = util.envHome .. path:sub(2)
     end
     return path
 end

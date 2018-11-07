@@ -64,9 +64,7 @@ local function setupSaneBuftabLabels()
     end
 
     events.connect(events.BUFFER_DELETED, ensure)
-    events.connect(events.FILE_OPENED, ensure)
-    events.connect(events.BUFFER_NEW, ensure)
-    events.connect(events.BUFFER_AFTER_SWITCH, ensure)
+    events.connect(util.eventBufSwitch, ensure)
     events.connect(events.FILE_AFTER_SAVE, ensure)
     events.connect(events.UPDATE_UI, function(upd)
         if util.bufIsUpdateOf(upd, buffer.UPDATE_CONTENT) then ensure() end
@@ -223,9 +221,7 @@ local function setupShowCurFileFullPath()
     end
 
     events.connect(events.FILE_AFTER_SAVE, ensure)
-    events.connect(events.BUFFER_AFTER_SWITCH, ensure)
-    events.connect(events.FILE_OPENED, ensure)
-    events.connect(events.BUFFER_NEW, ensure)
+    events.connect(util.eventBufSwitch, ensure)
 end
 
 
@@ -315,6 +311,17 @@ local function setupAutoHighlight()
 end
 
 
+-- alternative buffer-tabs navigation: alt-left & alt-right for prev/next,
+-- alt-tab & shift-alt-tab based on recent-ness
+local function setupAltBuftabNav()
+    keys.aright = function() view:goto_buffer(1) end
+    keys.aleft = function() view:goto_buffer(-1) end
+
+    keys['c\t'] = function() end
+    keys['cs\t'] = function() end
+end
+
+
 function ux.init()
     keys.a0 = function() goToBuftab(0) end
     keys.a1 = function() goToBuftab(1) end
@@ -337,6 +344,7 @@ function ux.init()
     keys[ux.keysFindIncr], keys[ux.keysFindDiag], keys[ux.keysFindWord] = setupFindRoutines()
     setupHoverTips()
     --setupAutoHighlight()
+    setupAltBuftabNav()
 end
 
 
