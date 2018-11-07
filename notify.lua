@@ -15,8 +15,8 @@ end
 
 local function clearMenu()
     menu = { title = strIcon }
-    menu[1 + #menu] = { '(Clear)', clearMenu }
-    menu[1 + #menu] = { '(Close)', function() end }
+    menu[1 + #menu] = { '', clearMenu }
+    menu[1 + #menu] = { '', function() end }
     ensureMenu()
 end
 
@@ -39,9 +39,8 @@ function notify.init()
     clearMenu()
 
     events.connect(events.DWELL_START, function()
-        if timeLastEmit and 3 < (os.time() - timeLastEmit) then
-            timeLastEmit = nil
-            menu.title = strIcon
+        if timeLastEmit and menu.title ~= strIcon and 23 < (os.time() - timeLastEmit) then
+            textadept.menu.menubar[4].title = strIcon
             ensureMenu()
         end
     end)
