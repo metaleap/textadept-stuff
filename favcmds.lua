@@ -63,10 +63,11 @@ local function onCmd(favCmd, pipeBufOrSel)
         local cmd = fillInCmd(favCmd)
         if #cmd > 0 then
             local line = ''
+            local tabtitle = os.date("[ %H:%M:%S ]\t")..cmd
             local println = function(txt)
                 if txt then
                     if txt:sub(-1) == '\n' then
-                        ui._print(cmd, line .. txt:sub(1, -2))
+                        ui._print(tabtitle, line .. txt:sub(1, -2))
                         line = ''
                     else
                         line = line .. txt
@@ -75,7 +76,7 @@ local function onCmd(favCmd, pipeBufOrSel)
             end
 
             local proc = os.spawn(cmd, println, println, function(exit)
-                if line ~= '' then ui._print(cmd, line) end
+                if line ~= '' then ui._print(tabtitle, line) end
                 notify.emit('`' .. cmd .. '` exit code ' .. tostring(exit))
             end)
             if pipeBufOrSel then
@@ -99,9 +100,10 @@ local function onSh(favCmd, pipeBufOrSel)
             end
         end
         if #cmd > 0 then
+            local tabtitle = os.date("[ %H:%M:%S ]\t")..cmd
             f = io.popen(cmd, 'r')
             for ln in f:lines() do
-                ui._print(cmd, ln)
+                ui._print(tabtitle, ln)
             end
             f:close()
         end
