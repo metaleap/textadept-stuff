@@ -39,8 +39,9 @@ function notify.init()
     clearMenu()
 
     events.connect(events.DWELL_START, function()
-        if timeLastEmit and 23 < (os.time() - timeLastEmit) then
-            menu.title = 'Dwell'
+        if timeLastEmit and 3 < (os.time() - timeLastEmit) then
+            timeLastEmit = nil
+            menu.title = strIcon
             ensureMenu()
         end
     end)
