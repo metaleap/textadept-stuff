@@ -8,6 +8,7 @@ local menu
 
 
 local function ensureMenu()
+    events.emit(events.KEYPRESS, 0xFF1B)
     textadept.menu.menubar[4] = menu
 end
 
@@ -24,6 +25,7 @@ end
 
 
 function notify.emit(msg)
+    textadept.menu.menubar.
     menu.title = ' '..msg
     table.insert(menu, 1, { util.menuable(os.date("(%H:%M:%S)\t")..msg), function() showDetails(msg) end })
     ensureMenu()
