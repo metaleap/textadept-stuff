@@ -14,8 +14,9 @@ end
 
 local function clearMenu()
     menu = { title = '' }
+    menu[1 + #menu] = { '(Clear)', clearMenu }
     menu[1 + #menu] = { '(Close)', function() end }
-    menu[1 + #menu] = { '(Clear)', function() clearMenu() end }
+    ensureMenu()
 end
 
 
@@ -33,7 +34,6 @@ end
 
 function notify.init()
     clearMenu()
-    ensureMenu()
 end
 
 
