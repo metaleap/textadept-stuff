@@ -14,8 +14,8 @@ end
 
 local function clearMenu()
     menu = { title = '' }
-    menu[1 + #menu] = { '(Clear)', function() clearMenu() end }
     menu[1 + #menu] = { '(Close)', function() end }
+    menu[1 + #menu] = { '(Clear)', function() clearMenu() end }
 end
 
 
