@@ -5,6 +5,7 @@ local util = require 'metaleap_zentient.util'
 
 
 favdirs.keys = 'cao'
+local menuPos
 
 
 local function showFilteredListDialogOfFiles(dir, defaultFilter)
@@ -57,6 +58,8 @@ end
 
 function favdirs.init(favDirs)
     local freshmenu
+
+    menuPos = 1 + #textadept.menu.menubar
     freshmenu = function()
         local lastdirpath = util.envHome
         local menu = { title = '' }
@@ -87,7 +90,7 @@ function favdirs.init(favDirs)
         end }
 
         menu[1 + #menu] = { '', function() end }
-        textadept.menu.menubar[3] = menu
+        textadept.menu.menubar[menuPos] = menu
     end
 
     freshmenu()

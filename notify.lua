@@ -5,17 +5,16 @@ local util = require 'metaleap_zentient.util'
 
 
 local strIcon = ''
-local menu, timeLastEmit
+local menu, menuPos, timeLastEmit
 
 
 local function ensureMenu()
-    textadept.menu.menubar[4] = menu
+    textadept.menu.menubar[menuPos] = menu
 end
 
 
 local function clearMenu()
     menu = { title = strIcon }
-    menu[1 + #menu] = { '', clearMenu }
     menu[1 + #menu] = { '', function() end }
     ensureMenu()
 end
@@ -27,6 +26,7 @@ end
 
 
 function notify.emit(msg)
+    ui.print(#menu)
     timeLastEmit = os.time()
     menu.title = strIcon..' '..util.uxStrMenuable(msg)
     table.insert(menu, 1, { util.uxStrMenuable(util.uxStrNowTime() .. msg),
@@ -36,11 +36,13 @@ end
 
 
 function notify.init()
+    menuPos = 1 + #textadept.menu.menubar
+
     clearMenu()
 
     events.connect(events.DWELL_START, function()
         if timeLastEmit and menu.title ~= strIcon and 23 < (os.time() - timeLastEmit) then
-            textadept.menu.menubar[4].title = strIcon
+            textadept.menu.menubar[menuPos].title = strIcon
             ensureMenu()
         end
     end)

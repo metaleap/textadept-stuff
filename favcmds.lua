@@ -5,6 +5,9 @@ local notify = require 'metaleap_zentient.notify'
 
 
 
+local menuPos
+
+
 local function fillInCmd(cmd)
     local pat = "%§%(([%w_]+)%)"
     local names = {}
@@ -112,6 +115,8 @@ end
 
 
 function favcmds.init(favCmds)
+    menuPos = 1 + #textadept.menu.menubar
+
     if #favCmds > 0 then
         local menu = { title = '' }
         for _, fc in ipairs(favCmds) do
@@ -122,7 +127,7 @@ function favcmds.init(favCmds)
             end
         end
         menu[1 + #menu] = { '', function() end }
-        textadept.menu.menubar[2] = menu
+        textadept.menu.menubar[menuPos] = menu
     end
 end
 
