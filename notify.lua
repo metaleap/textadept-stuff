@@ -30,8 +30,8 @@ function notify.emit(msg)
     menu.title = strIcon..' '..util.uxStrMenuable(msg)
 
     if 1 == #menu then
-        menu[1 + #menu] = { '' }
-        menu[1 + #menu] = { '', clearMenu }
+        table.insert(menu, 1, { '', clearMenu })
+        table.insert(menu, 1, { '' })
     end
 
     table.insert(menu, 1, { util.uxStrMenuable(util.uxStrNowTime() .. msg),
