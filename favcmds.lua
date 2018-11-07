@@ -73,7 +73,7 @@ local function onCmd(favCmd, pipeBufOrSel)
                 end
             end
             local proc = os.spawn(cmd, println, println, function(exit)
-                if line and #line > 0 then ui._print(cmd, line) end
+                if line ~= '' then ui._print(cmd, line) end
             end)
             if pipeBufOrSel then
                 proc:write(util.bufSelText(true))
