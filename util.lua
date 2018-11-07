@@ -94,9 +94,43 @@ function util.uxStrMenuable(text)
     return text:gsub('_', '__')
 end
 
+
 function util.uxStrNowTime(pref, suff)
     if (not pref) and (not suff) then pref, suff = '[ ', ' ]\t' end
     return os.date((pref or '') .. "%H:%M:%S" .. (suff or ''))
+end
+
+
+function util.osSpawnProc(cmd, stdoutSplitSep, onStdout, stderrSplitSep, onStdErr, nonWritable, onExit)
+    local lnout, lnerr = '', ''
+
+    local onstdout, onstderr, onexit = function(stdout)
+        if txt and #txt > 0 then
+            if txt:sub(-1) == splitsep then
+                onStdout(lnout..txt:sub(1, -2))
+                lnout = ''
+            else
+                lnout = lnout..txt
+            end
+        end
+    end, function(stderr)
+        if txt and #txt > 0 then
+            if txt:sub(-1) == splitsep then
+                onStderr(lnerr..txt:sub(1, -2))
+                lnerr = ''
+            else
+                lnerr = lnerr..txt
+            end
+        end
+    end, function(exitcode)
+        if lnout ~= '' then onStdout(lnout) end
+        if lnerr ~= '' then onStderr(lnerr) end
+        if onExit then onExit(exitcode) end
+    end
+
+    local proc = os.spawn(cmd, onstdout, onstderr, onexit)
+    if nonWritable then proc:close() end
+    return proc
 end
 
 

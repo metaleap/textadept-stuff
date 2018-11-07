@@ -65,27 +65,16 @@ local function onCmd(favCmd, pipeBufOrSel)
     return function()
         local cmd = fillInCmd(favCmd)
         if #cmd > 0 then
-            local line = ''
             local tabtitle = util.uxStrNowTime() .. cmd
-            local println = function(txt)
-                if txt then
-                    if txt:sub(-1) == '\n' then
-                        ui._print(tabtitle, line .. txt:sub(1, -2))
-                        line = ''
-                    else
-                        line = line .. txt
-                    end
-                end
-            end
+            local println = function(txt) ui._print(tabtitle, txt) end
 
-            local proc = os.spawn(cmd, println, println, function(exit)
-                if line ~= '' then ui._print(tabtitle, line) end
-                notify.emit('`' .. cmd .. '` exit code: ' .. tostring(exit))
+            local proc = util.osSpawnProc(cmd, '\n', println, '\n', println, not pipeBufOrSel, function(exitcode)
+                notify.emit('`' .. cmd .. '` exit code: ' .. tostring(exitcode))
             end)
             if pipeBufOrSel then
                 proc:write(util.bufSelText(true))
+                proc:close()
             end
-            proc:close()
         end
     end
 end
