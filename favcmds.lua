@@ -77,7 +77,7 @@ local function onCmd(favCmd, pipeBufOrSel)
 
             local proc = os.spawn(cmd, println, println, function(exit)
                 if line ~= '' then ui._print(tabtitle, line) end
-                notify.emit('`' .. cmd .. '` exit code ' .. tostring(exit))
+                notify.emit('`' .. cmd .. '` exit code: ' .. tostring(exit))
             end)
             if pipeBufOrSel then
                 proc:write(util.bufSelText(true))
