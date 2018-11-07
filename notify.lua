@@ -25,6 +25,11 @@ local function showDetails(msg)
 end
 
 
+function notify.emit(msg)
+    events.emit(notify.EVENT, msg)
+end
+
+
 function notify.init()
     clearMenu()
 
