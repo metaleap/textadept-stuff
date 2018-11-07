@@ -76,8 +76,7 @@ local function onCmd(favCmd, pipeBufOrSel)
 
             local proc = os.spawn(cmd, println, println, function(exit)
                 if line ~= '' then ui._print(cmd, line) end
-                ui._print(notify.EVENT)
-                event.emit(notify.EVENT, cmd .. ' exited with code: ' .. tostring(exit))
+                event.emit(notify.EVENT, "holla") -- cmd .. ' exited with code: ' .. tostring(exit)
             end)
             if pipeBufOrSel then
                 proc:write(util.bufSelText(true))

@@ -29,6 +29,7 @@ function notify.init()
     clearMenu()
 
     events.connect(notify.EVENT, function(msg)
+        ui.print(msg)
         menu.title = ' '..msg
         table.insert(menu, 1, { util.menuable(msg), function() showDetails(msg) end })
     end)
