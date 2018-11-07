@@ -61,11 +61,19 @@ local function onCmd(favCmd, pipeBufOrSel)
     return function()
         local cmd = fillInCmd(favCmd)
         if #cmd > 0 then
-            local proc = os.spawn(cmd, function(stdout)
-                ui._print(cmd, "OUT"..stdout)
-            end, function(stderr)
-                ui._print(cmd, "ERR"..stderr)
-            end, function(exit)
+            local line = ''
+            local println = function(txt)
+                if txt then
+                    if txt:sub(-1) == '\n' then
+                        ui._print(cmd, line .. txt:sub(1, -2))
+                        line = ''
+                    else
+                        line = line .. txt
+                    end
+                end
+            end
+            local proc = os.spawn(cmd, println, println, function(exit)
+                if line then ui._print(cmd, line) end
             end)
             if pipeBufOrSel then
                 proc:write(util.bufSelText(true))
