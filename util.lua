@@ -106,7 +106,7 @@ function util.osSpawnProc(cmd, stdoutSplitSep, onStdout, stderrSplitSep, onStdEr
 
     local onstdout, onstderr, onexit = function(txt)
         if txt and #txt > 0 then
-            if txt:sub(-1) == splitsep then
+            if txt:sub(-1) == stdoutSplitSep then
                 onStdout(lnout..txt:sub(1, -2))
                 lnout = ''
             else
@@ -115,7 +115,7 @@ function util.osSpawnProc(cmd, stdoutSplitSep, onStdout, stderrSplitSep, onStdEr
         end
     end, function(txt)
         if txt and #txt > 0 then
-            if txt:sub(-1) == splitsep then
+            if txt:sub(-1) == stderrSplitSep then
                 onStderr(lnerr..txt:sub(1, -2))
                 lnerr = ''
             else
