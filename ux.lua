@@ -207,7 +207,7 @@ end
 -- shows the full dir path of the currently active buf-tab
 local function setupShowCurFileFullPath()
     local menutitle = function()
-        return util.menuable(util.fsPathPrettify(util.fsPathParentDir(buffer.filename or buffer.tab_label), true, true)) .. '\t'
+        return util.uxStrMenuable(util.fsPathPrettify(util.fsPathParentDir(buffer.filename or buffer.tab_label), true, true)) .. '\t'
     end
 
     local menu = { title = menutitle() }

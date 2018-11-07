@@ -63,10 +63,10 @@ function favdirs.init(favDirs)
         for _, fd in ipairs(favDirs) do
             local favdir, defaultfilter = fd[1], fd[2]
             local subdirs = util.fsSubDirNames(util.fsPathExpandHomeDirTildePrefix(favdir))
-            local anysubs, submenu = false, { title = util.menuable(util.fsPathPrettify(favdir, false, true)) }
+            local anysubs, submenu = false, { title = util.uxStrMenuable(util.fsPathPrettify(favdir, false, true)) }
             for _, subdir in ipairs(subdirs) do
                 if not util.fsPathHasDotNames(subdir) then
-                    anysubs, submenu[1 + #submenu] = true, { util.menuable(util.fsPathPrettify(subdir, false, true)), function()
+                    anysubs, submenu[1 + #submenu] = true, { util.uxStrMenuable(util.fsPathPrettify(subdir, false, true)), function()
                         showFilteredListDialogOfFiles(favdir .. '/' .. subdir, defaultfilter)
                         freshmenu()
                     end }

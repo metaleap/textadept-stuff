@@ -63,7 +63,7 @@ local function onCmd(favCmd, pipeBufOrSel)
         local cmd = fillInCmd(favCmd)
         if #cmd > 0 then
             local line = ''
-            local tabtitle = os.date("[ %H:%M:%S ]\t")..cmd
+            local tabtitle = util.uxStrNowTime() .. cmd
             local println = function(txt)
                 if txt then
                     if txt:sub(-1) == '\n' then
@@ -100,7 +100,7 @@ local function onSh(favCmd, pipeBufOrSel)
             end
         end
         if #cmd > 0 then
-            local tabtitle = os.date("[ %H:%M:%S ]\t")..cmd
+            local tabtitle = util.uxStrNowTime() .. cmd
             f = io.popen(cmd, 'r')
             for ln in f:lines() do
                 ui._print(tabtitle, ln)
@@ -116,9 +116,9 @@ function favcmds.init(favCmds)
         local menu = { title = '' }
         for _, fc in ipairs(favCmds) do
             if fc.sh then
-                menu[1 + #menu] = { util.menuable(fc.sh), onSh(fc.sh, fc.pipeBufText) }
+                menu[1 + #menu] = { util.uxStrMenuable(fc.sh), onSh(fc.sh, fc.pipeBufText) }
             elseif fc.cmd then
-                menu[1 + #menu] = { util.menuable(fc.cmd), onCmd(fc.cmd, fc.pipeBufText) }
+                menu[1 + #menu] = { util.uxStrMenuable(fc.cmd), onCmd(fc.cmd, fc.pipeBufText) }
             end
         end
         textadept.menu.menubar[2] = menu

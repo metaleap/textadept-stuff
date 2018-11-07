@@ -90,8 +90,13 @@ function util.bufIsUpdateOf(upd, ...)
 end
 
 
-function util.menuable(text)
+function util.uxStrMenuable(text)
     return text:gsub('_', '__')
+end
+
+function util.uxStrNowTime(pref, suff)
+    if (not pref) and (not suff) then pref, suff = '[ ', ' ]\t' end
+    return os.date((pref or '') .. "%H:%M:%S" .. (suff or ''))
 end
 
 
