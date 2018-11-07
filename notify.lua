@@ -25,7 +25,7 @@ end
 
 function notify.emit(msg)
     menu.title = ' '..msg
-    table.insert(menu, 1, { util.menuable(os.date("(%H:%M:%S)\t\t")..msg), function() showDetails(msg) end })
+    table.insert(menu, 1, { util.menuable(os.date("(%H:%M:%S)\t")..msg), function() showDetails(msg) end })
     ensureMenu()
 end
 
