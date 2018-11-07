@@ -62,9 +62,9 @@ local function onCmd(favCmd, pipeBufOrSel)
         local cmd = fillInCmd(favCmd)
         if #cmd > 0 then
             local proc = os.spawn(cmd, function(stdout)
-                ui._print(cmd, stdout)
+                ui._print(cmd, "OUT"..stdout)
             end, function(stderr)
-                ui._print(cmd, stderr)
+                ui._print(cmd, "ERR"..stderr)
             end, function(exit)
             end)
             if pipeBufOrSel then
