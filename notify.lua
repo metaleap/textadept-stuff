@@ -8,7 +8,7 @@ local menu
 
 
 local function ensureMenu()
-    events.emit(events.KEYPRESS, 0xFF1B)
+    --events.emit(events.KEYPRESS, 0xFF1B)
     textadept.menu.menubar[4] = menu
 end
 
