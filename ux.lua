@@ -317,8 +317,51 @@ local function setupAltBuftabNav()
     keys.aright = function() view:goto_buffer(1) end
     keys.aleft = function() view:goto_buffer(-1) end
 
-    keys['c\t'] = function() end
-    keys['cs\t'] = function() end
+    local mostrecent = {}
+    for i, buf in ipairs(_BUFFERS) do
+        local bufname = buf.filename or buf.tab_label
+        if buf == buffer then
+            table.insert(mostrecent, 1, bufname)
+        else
+            mostrecent[1 + #mostrecent] = bufname
+        end
+    end
+
+    events.connect(util.eventBufSwitch, function(i)
+        if i then
+            local buf = _BUFFERS[i]
+            local bufname = buf.filename or buf.tab_label
+            for i = #mostrecent, 1, -1 do
+                if mostrecent[i] == bufname and i ~= 1 then
+                    table.remove(mostrecent, i)
+                    break
+                end
+            end
+            table.insert(mostrecent, 1, bufname)
+        end
+    end)
+
+    local pos = 1
+    events.connect(events.KEYPRESS, function(code, shift, ctrl, alt, meta, capslock)
+        if ctrl and not (alt or meta) then
+            if code == 65289 then -- ctrl+tab
+                pos = pos + 1
+                if pos > #mostrecent then pos = 1 end
+                --view:goto_buffer()
+                --ui.statusbar_text = tostring(pos) .. ' / ' .. tostring(#mostrecent) .. ' |> ' .. mostrecent[pos]
+            elseif code == 65056 then -- ctrl+shift+tab
+                pos = pos - 1
+                if pos < 1 then pos = #mostrecent end
+                --ui.statusbar_text = tostring(pos) .. ' / ' .. tostring(#mostrecent) .. ' |> ' .. mostrecent[pos]
+            end
+            return true
+        elseif pos > 1 then
+            pos = 1
+        end
+    end)
+
+    keys['c\t'] = nil
+    keys['cs\t'] = nil
 end
 
 

@@ -8,7 +8,15 @@ local envHomeSlash = util.envHome .. '/'
 
 
 do
-    local emitEventBufSwitch = function() events.emit(util.eventBufSwitch) end
+    local emitEventBufSwitch = function()
+        for i, buf in ipairs(_BUFFERS)do
+            if buf == buffer then
+                events.emit(util.eventBufSwitch, i)
+                return
+            end
+        end
+        events.emit(util.eventBufSwitch)
+    end
     events.connect(events.FILE_OPENED, emitEventBufSwitch)
     events.connect(events.BUFFER_NEW, emitEventBufSwitch)
     events.connect(events.BUFFER_AFTER_SWITCH, emitEventBufSwitch)
