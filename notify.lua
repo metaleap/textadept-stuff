@@ -40,7 +40,8 @@ function notify.init()
 
     events.connect(events.DWELL_START, function()
         if timeLastEmit and 23 < (os.time() - timeLastEmit) then
-            textadept.menu.menubar[4].title = 'FOO'
+            menu.title = 'Dwell'
+            ensureMenu()
         end
     end)
 end
