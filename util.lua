@@ -7,22 +7,6 @@ util.eventBufSwitch = 'metaleap_zentient.EVENT_BUFSWITCH'
 local envHomeSlash = util.envHome .. '/'
 
 
-do
-    local emitEventBufSwitch = function()
-        for i, buf in ipairs(_BUFFERS)do
-            if buf == buffer then
-                events.emit(util.eventBufSwitch, i)
-                return
-            end
-        end
-        events.emit(util.eventBufSwitch)
-    end
-    events.connect(events.FILE_OPENED, emitEventBufSwitch)
-    events.connect(events.BUFFER_NEW, emitEventBufSwitch)
-    events.connect(events.BUFFER_AFTER_SWITCH, emitEventBufSwitch)
-end
-
-
 function util.fsPathJoin(...)
     local parts = {...}
     local path = ''
@@ -116,6 +100,19 @@ function util.bufClearHighlightedWords()
 end
 
 
+function util.bufIndexOf(bufFilenameOrTablabel)
+    for i, buf in ipairs(_BUFFERS) do
+        if ((not bufFilenameOrTablabel) and buf == buffer)
+            or bufFilenameOrTablabel == buf
+                or bufFilenameOrTablabel == (buf.filename or buf.tab_label)
+        then
+            return i
+        end
+    end
+    return nil
+end
+
+
 function util.bufIsUpdateOf(upd, ...)
     if upd then
         for _, chk in ipairs({...}) do
@@ -169,6 +166,16 @@ function util.osSpawnProc(cmd, stdoutSplitSep, onStdout, stderrSplitSep, onStdEr
     local proc = os.spawn(cmd, onstdout, onstderr, onexit)
     if nonWritable then proc:close() end
     return proc
+end
+
+
+do
+    local emitEventBufSwitch = function()
+        events.emit(util.eventBufSwitch, util.bufIndexOf())
+    end
+    events.connect(events.FILE_OPENED, emitEventBufSwitch)
+    events.connect(events.BUFFER_NEW, emitEventBufSwitch)
+    events.connect(events.BUFFER_AFTER_SWITCH, emitEventBufSwitch)
 end
 
 

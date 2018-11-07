@@ -317,7 +317,8 @@ local function setupAltBuftabNav()
     keys.aright = function() view:goto_buffer(1) end
     keys.aleft = function() view:goto_buffer(-1) end
 
-    local mostrecent = {}
+    local mostrecent, pos = {}, 1
+
     for i, buf in ipairs(_BUFFERS) do
         local bufname = buf.filename or buf.tab_label
         if buf == buffer then
@@ -327,35 +328,52 @@ local function setupAltBuftabNav()
         end
     end
 
-    events.connect(util.eventBufSwitch, function(i)
-        if i then
-            local buf = _BUFFERS[i]
-            local bufname = buf.filename or buf.tab_label
-            for i = #mostrecent, 1, -1 do
-                if mostrecent[i] == bufname and i ~= 1 then
-                    table.remove(mostrecent, i)
+    events.connect(util.eventBufSwitch, function(idx)
+        -- is it new as regards `mostrecent`?
+        for _, buf in ipairs(_BUFFERS) do
+            local found, bufname = false, buf.filename or buf.tab_label
+            for i, mr in ipairs(mostrecent) do
+                if mr == bufname then
+                    found = true
                     break
                 end
             end
-            table.insert(mostrecent, 1, bufname)
+            if not found then
+                mostrecent[1 + #mostrecent] = bufname
+            end
         end
+        -- is `mostrecent` stale, noting bufs that are gone?
+        for i = #mostrecent, 1, -1 do
+            if not util.bufIndexOf(mostrecent[i]) then
+                table.remove(mostrecent, i)
+            end
+        end
+        -- is cur-buf already in `mostrecent`? ditch.
+        local buf = idx and _BUFFERS[idx] or buffer
+        local bufname = buf.filename or buf.tab_label
+        for i = #mostrecent, 1, -1 do
+            if mostrecent[i] == bufname then
+                table.remove(mostrecent, i)
+                break
+            end
+        end
+        -- now cur-buf goes in front of `mostrecent`
+        table.insert(mostrecent, 1, bufname)
+        pos = 1
     end)
 
-    local pos = 1
     events.connect(events.KEYPRESS, function(code, shift, ctrl, alt, meta, capslock)
-        if ctrl and not (alt or meta) then
-            if code == 65289 then -- ctrl+tab
-                pos = pos + 1
-                if pos > #mostrecent then pos = 1 end
-                --view:goto_buffer()
-                --ui.statusbar_text = tostring(pos) .. ' / ' .. tostring(#mostrecent) .. ' |> ' .. mostrecent[pos]
-            elseif code == 65056 then -- ctrl+shift+tab
+        if ctrl and (not (alt or meta)) and (code == 65289 or code == 65056) then
+            if shift then
                 pos = pos - 1
                 if pos < 1 then pos = #mostrecent end
-                --ui.statusbar_text = tostring(pos) .. ' / ' .. tostring(#mostrecent) .. ' |> ' .. mostrecent[pos]
+            else
+                pos = pos + 1
+                if pos > #mostrecent then pos = 1 end
             end
+            ui.statusbar_text = tostring(pos) .. ' / ' .. tostring(#mostrecent) .. ' |> ' .. mostrecent[pos]
             return true
-        elseif pos > 1 then
+        else
             pos = 1
         end
     end)
