@@ -309,7 +309,7 @@ local function setupAltBuftabNav()
     keys.aright = function() view:goto_buffer(1) end
     keys.aleft = function() view:goto_buffer(-1) end
 
-    local mru, pos, wait, lasttime = {}, 1, false, 0
+    local mru, pos, ongoing, lasttime = {}, 1, false, 0
 
     util.resetBag['ux.buftabmru'] = {
         get = function() return mru end,
@@ -325,9 +325,8 @@ local function setupAltBuftabNav()
         end
     end
 
-    local refresh = function(_, force)
-        if force then wait = false end
-        if wait then return end
+    local refresh = function()
+        if ongoing then return end
         -- any new bufs for `mru`?
         for _, buf in ipairs(_BUFFERS) do
             local found, bufname = false, buf.filename or buf.tab_label
@@ -367,33 +366,31 @@ local function setupAltBuftabNav()
 
     local tabtime = os.time()
     events.connect(events.KEYPRESS, function(code, shift, ctrl, alt, meta, capslock)
+        -- ctrl+tab or ctrl+shift+tab ?
         if ctrl and (not (alt or meta)) and (code == 65289 or code == 65056) then
-            -- a ctrl+tab or ctrl+shift+tab
             if shift then
-                pos = pos - 1
-                if pos < 1 then pos = #mru end
+                pos = (pos == 1) and #mru or (pos - 1)
             else
-                pos = pos + 1
-                if pos > #mru then pos = 1 end
+                pos = (pos == #mru) and 1 or pos + 1
             end
             tabtime = os.time()
-            if not wait then
-                wait = true
+            if not ongoing then -- the first of potentially multiple tab presses
+                ongoing = true
                 timeout(1, function()
-                    if wait and os.time() - tabtime >= 1 then
-                        refresh(nil, true)
-                        return false
+                    if ongoing and os.time() - tabtime >= 1 then
+                        ongoing = false -- allows refresh-of-mru
+                        refresh() -- complete the op via refresh-of-mru
                     end
-                    return wait
+                    return ongoing
                 end)
             end
             view:goto_buffer(_BUFFERS[util.bufIndexOf(mru[pos])])
             return true
-        elseif ctrl and (code == 65505 or code == 65506) then
-            -- a shift-key was pressed, ignore
-        elseif wait and pos > 1 then
-            -- anything else, force early refresh
-            refresh(nil, true)
+        elseif ongoing and pos > 1 and -- is a ctrl(+shift)+tab op still ongoing?
+            not (ctrl and (code == 65505 or code == 65506)) -- not a shift press?
+        then -- interruption of ongoing ctrl(+shift)+tab op by some unrelated keypress:
+            ongoing = false -- allows refresh-of-mru
+            refresh() -- complete the op via refresh-of-mru
         end
     end)
 
