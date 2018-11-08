@@ -77,20 +77,34 @@ end
 local function cmdState(favCmd, cmdStr)
     local tabtitle = util.uxStrNowTime() .. cmdStr
     local stdout, stderr = { lns = {} }, { lns = {} }
+    local action = function()
+        local buf = util.bufBy(nil, tabtitle, false) or util.bufBy(nil, tabtitle..'*', false)
+        if not buf then
+            for _, ln in ipairs(stdout.lns) do
+                ui._print(tabtitle, ln)
+            end
+        else
+            buf:set_text('')
+            for _, ln in ipairs(stdout.lns) do
+                buf:append_text(ln..'\n')
+            end
+            view:goto_buffer(buf)
+        end
+    end
     local onstdout = function(ln)
         stdout.lns[1 + #stdout.lns] = ln
         if favCmd.stdout and favCmd.stdout.lnNotify then
-            notifyEmit(cmdStr, ln, '')
+            notifyEmit(cmdStr, ln, '', action)
         end
     end
     local onstderr = function(ln)
         stderr.lns[1 + #stderr.lns] = ln
         local fce = (favCmd.stderr == true) and favCmd.stdout or favCmd.stderr
         if fce and fce.lnNotify then
-            notifyEmit(cmdStr, ln, '')
+            notifyEmit(cmdStr, ln, '', action)
         end
     end
-    return onstdout, onstderr
+    return onstdout, onstderr, action
 end
 
 
@@ -98,9 +112,9 @@ local function onCmd(favCmd)
     return function()
         local cmdstr = fillInCmd(favCmd.cmd)
         if #cmdstr > 0 then
-            local onstdout, onstderr = cmdState(favCmd, cmdstr)
+            local onstdout, onstderr, action = cmdState(favCmd, cmdstr)
             local proc = util.osSpawnProc(cmdstr, '\n', onstdout, '\n', onstderr, false, function(errmsg, exitcode)
-                notifyDone(cmdstr, nil, exitcode == 0, errmsg or 'exit', exitcode)
+                notifyDone(cmdstr, action, exitcode == 0, errmsg or 'exit', exitcode)
             end)
             if proc then
                 if favCmd.pipeBufText then proc:write(util.bufSelText(true)) end

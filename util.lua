@@ -114,6 +114,20 @@ function util.bufIndexOf(bufOrBufFilePathOrBufTabLabel)
 end
 
 
+function util.bufBy(bufFilePath, bufTabLabel, orCreateNew)
+    local needle = bufTabLabel or bufFilePath
+    local chkfld = bufTabLabel and 'tab_label' or 'filename'
+    for _, buf in ipairs(_BUFFERS) do
+        if buf[chkfld] == needle then return buf end
+    end
+    if orCreateNew then
+        local buf = buffer.new()
+        -- buf.tab_label = needle -- ineffective, would need to view:goto_buffer first
+        return buf
+    end
+end
+
+
 function util.bufIsUpdateOf(upd, ...)
     if upd then
         for _, chk in ipairs({...}) do
@@ -164,9 +178,7 @@ function util.strTrimLeft(s) -- , dbg)
     for i = 1, len do
         local chr = s:sub(i, i)
         if not (chr==' ' or chr=='	' or chr=='\t' or chr=='\r' or chr=='\n' or chr=='\v' or chr=='\b') then
-            --if i == 1 and dbg then
-                --ui.print(string.format("WUT::%q::",chr))
-            --end
+            --if i == 1 and dbg then ui.print(string.format("HUH::%q::",chr)) end
             pos = i
             break
         end
