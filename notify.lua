@@ -34,7 +34,7 @@ local function menuBuild(title)
                                     function() showDetails(msg.txt) end }
             else
                 local lastmsg = group.msgs[#group.msgs]
-                local submenu = { title = lastmsg.time..(lastmsg.cat or '')..'\t '..group.name}
+                local submenu = { title = (lastmsg.cat or '')..'\t '..group.name}
                 for m = #group.msgs, 1, -1 do
                     local msg = group.msgs[m]
                     local txt = (msg.cat or '')..'\t '.. msg.txt
