@@ -21,7 +21,7 @@ end
 local function menuItem(msg, prefix)
     local txt = (msg.cat or '')..'  '.. msg.txt
     return { util.uxStrMenuable(prefix .. txt),
-                function() showDetails(msg.txt) end }
+                msg.action or function() showDetails(msg.txt) end }
 end
 
 
@@ -67,9 +67,9 @@ local function menuClear()
 end
 
 
-function notify.emit(groupname, message, cat, sep)
+function notify.emit(groupname, message, cat, action, sep)
     local now, group = util.uxStrNowTime(), util.arrFind(groups, function(v) return v.name == groupname end)
-    local msg = { txt = message, time = now, cat = cat, sep = sep }
+    local msg = { txt = message, time = now, cat = cat, sep = sep, action = action }
     if not group then
         group = { time = now, name = groupname, msgs = { msg } }
         groups[1 + #groups] = group

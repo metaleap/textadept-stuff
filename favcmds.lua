@@ -61,40 +61,46 @@ local function fillInCmd(cmd)
 end
 
 
-local function notifyEmit(cmd, msg, cat, sep)
-    notify.emit('`'..cmd..'`', msg, cat, sep)
+local function notifyEmit(cmd, msg, cat, action, sep)
+    notify.emit('`'..cmd..'`', msg, cat, action, sep)
 end
 
 
-local function notifyDone(cmd, success, reason, exitcode)
+local function notifyDone(cmd, action, success, notice, code)
     notifyEmit(cmd,
-                (success and 'finished: ' or 'failed: ') .. reason .. ' ' .. (exitcode and tostring(exitcode) or ''),
+                notice .. (code and (' ‹'..tostring(code)..'›') or ''),
                 success and '' or '',
-                true)
+                action, true)
+end
+
+
+local function cmdState(favCmd, cmdStr)
+    local tabtitle = util.uxStrNowTime() .. cmdStr
+    local stdout, stderr = { lns = {} }, { lns = {} }
+    local onstdout = function(ln)
+        stdout.lns[1 + #stdout.lns] = ln
+        if favCmd.stdout and favCmd.stdout.lnNotify then
+            notifyEmit(cmdStr, ln, '')
+        end
+    end
+    local onstderr = function(ln)
+        stderr.lns[1 + #stderr.lns] = ln
+        local fce = (favCmd.stderr == true) and favCmd.stdout or favCmd.stderr
+        if fce and fce.lnNotify then
+            notifyEmit(cmdStr, ln, '')
+        end
+    end
+    return onstdout, onstderr
 end
 
 
 local function onCmd(favCmd)
     return function()
-        local cmd = fillInCmd(favCmd.cmd)
-        if #cmd > 0 then
-            local tabtitle = util.uxStrNowTime() .. cmd
-            local stdout, stderr = { lns = {} }, { lns = {} }
-            local onstdout = function(ln) -- ui._print(tabtitle, txt)
-                stdout.lns[1 + #stdout.lns] = ln
-                if favCmd.stdout and favCmd.stdout.lnNotify then
-                    notifyEmit(cmd, ln, '')
-                end
-            end
-            local onstderr = function(ln)
-                stderr.lns[1 + #stderr.lns] = ln
-                if favCmd.stderr and favCmd.stderr.lnNotify then
-                    notifyEmit(cmd, ln, '')
-                end
-            end
-
-            local proc = util.osSpawnProc(cmd, '\n', onstdout, '\n', onstderr, false, function(errmsg, exitcode)
-                notifyDone(cmd, exitcode == 0, errmsg or 'exit', exitcode)
+        local cmdstr = fillInCmd(favCmd.cmd)
+        if #cmdstr > 0 then
+            local onstdout, onstderr = cmdState(favCmd, cmdstr)
+            local proc = util.osSpawnProc(cmdstr, '\n', onstdout, '\n', onstderr, false, function(errmsg, exitcode)
+                notifyDone(cmdstr, nil, exitcode == 0, errmsg or 'exit', exitcode)
             end)
             if proc then
                 if favCmd.pipeBufText then proc:write(util.bufSelText(true)) end
@@ -104,10 +110,10 @@ local function onCmd(favCmd)
     end
 end
 
-local function onSh(favCmd, pipeBufOrSel)
+local function onSh(favCmd)
     return function()
-        local cmd = fillInCmd(favCmd)
-        if pipeBufOrSel then
+        local cmd = fillInCmd(favCmd.sh)
+        if favCmd.pipeBufText then
             if buffer.filename and buffer.selection_empty and not buffer.modify then
                 cmd = "cat '" .. buffer.filename .. "' | " .. cmd
             else
@@ -117,12 +123,13 @@ local function onSh(favCmd, pipeBufOrSel)
         end
         if #cmd > 0 then
             local tabtitle = util.uxStrNowTime() .. cmd
-            f, x, y, z = io.popen(cmd, 'r')
-            for ln in f:lines() do
-                ui._print(tabtitle, ln)
+            local sh, errmsg, code = io.popen(cmd, 'r')
+            if sh then
+                local onstdout = cmdState(favCmd, cmd)
+                for ln in sh:lines() do onstdout(ln) end
+                sh, errmsg, code = sh:close()
             end
-            local success, reason, exitcode = f:close()
-            notifyDone(cmd, success, reason, exitcode)
+            notifyDone(cmd, nil, sh, errmsg, code)
         end
     end
 end
@@ -135,7 +142,7 @@ function favcmds.init(favCmds)
         local menu = { title = '' }
         for _, fc in ipairs(favCmds) do
             if fc.sh then
-                menu[1 + #menu] = { util.uxStrMenuable(fc.sh), onSh(fc.sh, fc.pipeBufText) }
+                menu[1 + #menu] = { util.uxStrMenuable(fc.sh), onSh(fc) }
             elseif fc.cmd then
                 menu[1 + #menu] = { util.uxStrMenuable(fc.cmd), onCmd(fc) }
             end
