@@ -25,7 +25,7 @@ local function goToBuftab(tabNo)
         buf = _BUFFERS[tabNo]
     end
     if buf ~= nil then
-        view.goto_buffer(view, buf)
+        view:goto_buffer(buf)
     end
 end
 
@@ -117,14 +117,10 @@ end
 -- opens dialog to select "recent files" to open, but sorted by most-recently-
 -- closed and without listing files that are already currently opened
 local function setupRecentlyClosed()
-    events.connect(events.RESET_BEFORE, function(bag)
-        bag['metaleap_zentient.ux.recentlyClosedFiles'] = recentlyClosedFiles
-    end)
-
-    events.connect(events.RESET_AFTER, function(bag)
-        local recentlyclosedfiles = bag['metaleap_zentient.ux.recentlyClosedFiles']
-        if recentlyclosedfiles then recentlyClosedFiles = recentlyclosedfiles  end
-    end)
+    util.resetBag['ux.recentlyClosedFiles'] = {
+        get = function() return recentlyClosedFiles end,
+        set = function(v) recentlyClosedFiles = v end,
+    }
 
     return function()
         if #recentlyClosedFiles > 0 then
@@ -244,14 +240,10 @@ local function setupBuftabSelStateRecall()
         end
     end)
 
-    events.connect(events.RESET_BEFORE, function(bag)
-        bag['metaleap_zentient.ux.setupBuftabSelStateRecall.bufstates'] = bufstates
-    end)
-
-    events.connect(events.RESET_AFTER, function(bag)
-        local bs = bag['metaleap_zentient.ux.setupBuftabSelStateRecall.bufstates']
-        if bs then bufstates = bs end
-    end)
+    util.resetBag['ux.bufstates'] = {
+        get = function() return bufstates end,
+        set = function(v) bufstates = v end,
+    }
 end
 
 
@@ -317,64 +309,91 @@ local function setupAltBuftabNav()
     keys.aright = function() view:goto_buffer(1) end
     keys.aleft = function() view:goto_buffer(-1) end
 
-    local mostrecent, pos = {}, 1
+    local mru, pos, wait, lasttime = {}, 1, false, 0
+
+    util.resetBag['ux.buftabmru'] = {
+        get = function() return mru end,
+        set = function(v) mru = v end,
+    }
 
     for i, buf in ipairs(_BUFFERS) do
         local bufname = buf.filename or buf.tab_label
         if buf == buffer then
-            table.insert(mostrecent, 1, bufname)
+            table.insert(mru, 1, bufname)
         else
-            mostrecent[1 + #mostrecent] = bufname
+            mru[1 + #mru] = bufname
         end
     end
 
-    events.connect(util.eventBufSwitch, function(idx)
-        -- is it new as regards `mostrecent`?
+    local refresh = function(_, force)
+        if force then wait = false end
+        if wait then return end
+        -- any new bufs for `mru`?
         for _, buf in ipairs(_BUFFERS) do
             local found, bufname = false, buf.filename or buf.tab_label
-            for i, mr in ipairs(mostrecent) do
+            for _, mr in ipairs(mru) do
                 if mr == bufname then
                     found = true
                     break
                 end
             end
             if not found then
-                mostrecent[1 + #mostrecent] = bufname
+                if buf == buffer then
+                    table.insert(mru, 1, bufname)
+                else
+                    mru[1 + #mru] = bufname
+                end
             end
         end
-        -- is `mostrecent` stale, noting bufs that are gone?
-        for i = #mostrecent, 1, -1 do
-            if not util.bufIndexOf(mostrecent[i]) then
-                table.remove(mostrecent, i)
+        -- any gone bufs still in `mru`?
+        for i = #mru, 1, -1 do
+            if not util.bufIndexOf(mru[i]) then
+                table.remove(mru, i)
             end
         end
-        -- is cur-buf already in `mostrecent`? ditch.
-        local buf = idx and _BUFFERS[idx] or buffer
-        local bufname = buf.filename or buf.tab_label
-        for i = #mostrecent, 1, -1 do
-            if mostrecent[i] == bufname then
-                table.remove(mostrecent, i)
+        -- is cur-buf already anywhere in `mru`? then ditch first..
+        local bufname = buffer.filename or buffer.tab_label
+        for i = #mru, 1, -1 do
+            if mru[i] == bufname then
+                table.remove(mru, i)
                 break
             end
         end
-        -- now cur-buf goes in front of `mostrecent`
-        table.insert(mostrecent, 1, bufname)
+        -- ..now cur-buf goes in front of `mru`
+        table.insert(mru, 1, bufname)
         pos = 1
-    end)
+    end
+    events.connect(util.eventBufSwitch, refresh)
 
+    local tabtime = os.time()
     events.connect(events.KEYPRESS, function(code, shift, ctrl, alt, meta, capslock)
         if ctrl and (not (alt or meta)) and (code == 65289 or code == 65056) then
+            -- a ctrl+tab or ctrl+shift+tab
             if shift then
                 pos = pos - 1
-                if pos < 1 then pos = #mostrecent end
+                if pos < 1 then pos = #mru end
             else
                 pos = pos + 1
-                if pos > #mostrecent then pos = 1 end
+                if pos > #mru then pos = 1 end
             end
-            ui.statusbar_text = tostring(pos) .. ' / ' .. tostring(#mostrecent) .. ' |> ' .. mostrecent[pos]
+            tabtime = os.time()
+            if not wait then
+                wait = true
+                timeout(1, function()
+                    if wait and os.time() - tabtime >= 1 then
+                        refresh(nil, true)
+                        return false
+                    end
+                    return wait
+                end)
+            end
+            view:goto_buffer(_BUFFERS[util.bufIndexOf(mru[pos])])
             return true
-        else
-            pos = 1
+        elseif ctrl and (code == 65505 or code == 65506) then
+            -- a shift-key was pressed, ignore
+        elseif wait and pos > 1 then
+            -- anything else, force early refresh
+            refresh(nil, true)
         end
     end)
 

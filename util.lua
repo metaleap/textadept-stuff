@@ -4,6 +4,7 @@ local util = {}
 
 util.envHome = os.getenv("HOME")
 util.eventBufSwitch = 'metaleap_zentient.EVENT_BUFSWITCH'
+util.resetBag = {}
 local envHomeSlash = util.envHome .. '/'
 
 
@@ -169,7 +170,25 @@ function util.osSpawnProc(cmd, stdoutSplitSep, onStdout, stderrSplitSep, onStdEr
 end
 
 
+
+
 do
+    events.connect(events.RESET_BEFORE, function(bag)
+        local stash = {}
+        for k, v in pairs(util.resetBag) do
+            stash[k] = v.get()
+        end
+        bag['metaleap_zentient.util.resetBag'] = stash
+    end)
+    events.connect(events.RESET_AFTER, function(bag)
+        local stash = bag['metaleap_zentient.util.resetBag']
+        if stash then
+            for k, v in pairs(stash) do
+                util.resetBag[k].set(v)
+            end
+        end
+    end)
+
     local emitEventBufSwitch = function()
         events.emit(util.eventBufSwitch, util.bufIndexOf())
     end
