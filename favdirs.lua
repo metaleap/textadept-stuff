@@ -47,7 +47,7 @@ local function showFilteredListDialogOfDirs(favDirs)
     end
 
     local button, i = ui.dialogs.filteredlist{
-        title = 'Open from..', width = 2345, height = 1234,
+        title = 'Open from...', width = 2345, height = 1234,
         columns = {'Filter by:', '...then select:'}, items = dirlistitems,
     }
     if button == 1 then

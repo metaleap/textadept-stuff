@@ -101,11 +101,11 @@ function util.bufClearHighlightedWords()
 end
 
 
-function util.bufIndexOf(bufFilenameOrTablabel)
+function util.bufIndexOf(bufOrBufFilePathOrBufTabLabel)
     for i, buf in ipairs(_BUFFERS) do
-        if ((not bufFilenameOrTablabel) and buf == buffer)
-            or bufFilenameOrTablabel == buf
-                or bufFilenameOrTablabel == (buf.filename or buf.tab_label)
+        if ((not bufOrBufFilePathOrBufTabLabel) and buf == buffer)
+            or bufOrBufFilePathOrBufTabLabel == buf
+                or bufOrBufFilePathOrBufTabLabel == (buf.filename or buf.tab_label)
         then
             return i
         end
