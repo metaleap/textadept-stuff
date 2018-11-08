@@ -61,26 +61,42 @@ local function fillInCmd(cmd)
 end
 
 
-local function notifyDone(cmd, success, reason, exitcode)
-    notify.emit('`'..cmd..'`',
-                (success and 'finished: ' or 'failed: ') .. reason .. ' ' .. (exitcode and tostring(exitcode) or ''),
-                success and '' or '')
+local function notifyEmit(cmd, msg, cat)
+    notify.emit('`'..cmd..'`', msg, cat)
 end
 
 
-local function onCmd(favCmd, pipeBufOrSel)
+local function notifyDone(cmd, success, reason, exitcode)
+    notifyEmit(cmd,
+                (success and 'finished: ' or 'failed: ') .. reason .. ' ' .. (exitcode and tostring(exitcode) or ''),
+                success and '' or '')
+end
+
+
+local function onCmd(favCmd)
     return function()
-        local cmd = fillInCmd(favCmd)
+        local cmd = fillInCmd(favCmd.cmd)
         if #cmd > 0 then
             local tabtitle = util.uxStrNowTime() .. cmd
-            local println = function(txt) ui._print(tabtitle, txt) end
+            local stdout, stderr = { lns = {} }, { lns = {} }
+            local onstdout = function(ln) -- ui._print(tabtitle, txt)
+                stdout.lns[1 + #stdout.lns] = ln
+                if favCmd.stdout and favCmd.stdout.lnNotify then
+                    notifyEmit(cmd, ln, '')
+                end
+            end
+            local onstderr = function(ln)
+                stderr.lns[1 + #stderr.lns] = ln
+                if favCmd.stderr and favCmd.stderr.lnNotify then
+                    notifyEmit(cmd, ln, '')
+                end
+            end
 
-            local proc = util.osSpawnProc(cmd, '\n', println, '\n', println, false, function(errmsg, exitcode)
-                local success, reason = (exitcode == 0), (errmsg or 'exit')
-                notifyDone(cmd, success, reason, exitcode)
+            local proc = util.osSpawnProc(cmd, '\n', onstdout, '\n', onstderr, false, function(errmsg, exitcode)
+                notifyDone(cmd, exitcode == 0, errmsg or 'exit', exitcode)
             end)
             if proc then
-                if pipeBufOrSel then proc:write(util.bufSelText(true)) end
+                if favCmd.pipeBufText then proc:write(util.bufSelText(true)) end
                 proc:close()
             end
         end
@@ -120,7 +136,7 @@ function favcmds.init(favCmds)
             if fc.sh then
                 menu[1 + #menu] = { util.uxStrMenuable(fc.sh), onSh(fc.sh, fc.pipeBufText) }
             elseif fc.cmd then
-                menu[1 + #menu] = { util.uxStrMenuable(fc.cmd), onCmd(fc.cmd, fc.pipeBufText) }
+                menu[1 + #menu] = { util.uxStrMenuable(fc.cmd), onCmd(fc) }
             end
         end
         menu[1 + #menu] = { '' }

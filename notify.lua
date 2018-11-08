@@ -18,24 +18,27 @@ local function menuApply()
 end
 
 
+local function menuItem(msg, prefix)
+    local txt = (msg.cat or '')..'  '.. msg.txt
+    return { util.uxStrMenuable(prefix .. txt),
+                function() showDetails(msg.txt) end }
+end
+
+
 local function menuBuild(title)
     menu = { title = title or strIcon }
     if #groups > 0 then
         for g = #groups, 1, -1 do
             local group = groups[g]
-            if #group.msgs == 1 and nil then
+            if #group.msgs == 1 then
                 local msg = group.msgs[1]
-                local txt = (msg.cat or '')..'\t '.. msg.txt
-                menu[1 + #menu] = { util.uxStrMenuable(msg.time .. group.name .. '  »  ' .. txt),
-                                    function() showDetails(msg.txt) end }
+                menu[1 + #menu] = menuItem(msg, msg.time .. group.name .. '    »      ')
             else
                 local lastmsg = group.msgs[#group.msgs]
                 local submenu = { title = (lastmsg.cat or '')..'\t '..group.name}
                 for m = #group.msgs, 1, -1 do
                     local msg = group.msgs[m]
-                    local txt = (msg.cat or '')..'\t '.. msg.txt
-                    submenu[1 + #submenu] = { util.uxStrMenuable(msg.time .. txt),
-                                                function() showDetails(msg.txt) end }
+                    submenu[1 + #submenu] = menuItem(msg, msg.time)
                 end
                 menu[1 + #menu] = submenu
             end
@@ -64,7 +67,6 @@ function notify.emit(groupname, message, cat)
     else
         group.msgs[1 + #group.msgs] = msg
     end
-
     timeLastEmit = os.time()
     menuBuild(strIcon..'  '..groupname..'  »  '..util.uxStrMenuable(message))
 end
@@ -73,7 +75,6 @@ end
 function notify.init()
     menuPos = 1 + #textadept.menu.menubar
     menuClear()
-
     events.connect(events.DWELL_START, function()
         if timeLastEmit and menu.title ~= strIcon and 23 < (os.time() - timeLastEmit) then
             menu.title = strIcon

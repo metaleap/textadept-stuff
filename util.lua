@@ -127,7 +127,7 @@ end
 
 
 function util.uxStrMenuable(text)
-    return text:gsub('_', '__')
+    return util.strBreakOn(util.strTrimLeft(text), '\n', "   ‹…›"):gsub('_', '__')
 end
 
 
@@ -141,6 +141,34 @@ function util.arrFind(arr, chk)
     for _, val in ipairs(arr) do
         if chk(val) then return val end
     end
+end
+
+
+function util.strBreakOn(s, beforestr, suffix)
+    if #s > #beforestr then
+        for i = 1, #s do
+            if beforestr == s:sub(i, (i - 1) + #beforestr) then
+                return s:sub(1, i - 1) .. (suffix or '')
+            end
+        end
+    end
+    return s
+end
+
+
+-- avoiding patterns for such fundamental hi-freq aspire-to-realtime ops
+function util.strTrimLeft(s)
+    local len = #s
+    if (not s) or len == 0 then return '' end
+    local pos = 0
+    for i = 1, len do
+        local chr = s:sub(i, i)
+        if not (chr==' ' or chr=='\t' or chr=='\r' or chr=='\n' or chr=='\v' or chr=='\b') then
+            pos = i
+            break
+        end
+    end
+    return (pos == 0) and '' or ((pos == 1) and s or s:sub(pos))
 end
 
 
