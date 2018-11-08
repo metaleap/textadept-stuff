@@ -29,7 +29,7 @@ local function menuBuild(title)
             if #group.msgs == 1 then
                 local msg = group.msgs[1]
                 local txt = (msg.cat or '') .. msg.txt
-                menu[1 + #menu] = { util.uxStrMenuable(util.uxStrNowTime() .. group.name .. ' » ' .. txt),
+                menu[1 + #menu] = { util.uxStrMenuable(util.uxStrNowTime() .. group.name .. '\t»\t' .. txt),
                                     function() showDetails(msg.txt) end }
             else
             end
@@ -57,7 +57,7 @@ function notify.emit(groupname, message, cat)
     end
 
     timeLastEmit = now
-    menuBuild(strIcon..' '..groupname..' » '..util.uxStrMenuable(message))
+    menuBuild(cat or strIcon..' '..groupname..'\t»\t'..util.uxStrMenuable(message))
 end
 
 
