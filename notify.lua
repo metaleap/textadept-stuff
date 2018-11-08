@@ -18,8 +18,8 @@ local function menuApply()
 end
 
 
-local function menuBuild()
-    menu = { title = strIcon }
+local function menuBuild(title)
+    menu = { title = title or strIcon }
     menu[1 + #menu] = { '', function() end }
 
     if #groups > 0 then
@@ -56,8 +56,8 @@ function notify.emit(groupname, message, cat)
         group.msgs[1 + #group.msgs] = msg
     end
 
-    timeLastEmit, menu.title = now, strIcon..' '..groupname..' » '..util.uxStrMenuable(message)
-    menuBuild()
+    timeLastEmit = now
+    menuBuild(strIcon..' '..groupname..' » '..util.uxStrMenuable(message))
 end
 
 
