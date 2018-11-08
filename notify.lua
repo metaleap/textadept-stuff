@@ -25,9 +25,13 @@ local function menuItem(msg, prefix)
 end
 
 
-local function menuBuild(title)
+local function menuBuild(title, dropGroupIdx)
     menu = { title = title or strIcon }
+    if dropGroupIdx then table.remove(groups, dropGroupIdx) end
     if #groups > 0 then
+        table.sort(groups, function(dis, dat)
+            return dis.msgs[#dis.msgs].time < dat.msgs[#dat.msgs].time
+        end)
         for g = #groups, 1, -1 do
             local group = groups[g]
             if #group.msgs == 1 then
@@ -38,8 +42,13 @@ local function menuBuild(title)
                 local submenu = { title = (lastmsg.cat or '')..'\t '..group.name}
                 for m = #group.msgs, 1, -1 do
                     local msg = group.msgs[m]
+                    if msg.sep and m < #group.msgs then
+                        submenu[1 + #submenu] = { '' }
+                    end
                     submenu[1 + #submenu] = menuItem(msg, msg.time)
                 end
+                submenu[1 + #submenu] = { '' }
+                submenu[1 + #submenu] = { '', function() menuBuild(nil, g) end }
                 menu[1 + #menu] = submenu
             end
         end
@@ -58,9 +67,9 @@ local function menuClear()
 end
 
 
-function notify.emit(groupname, message, cat)
+function notify.emit(groupname, message, cat, sep)
     local now, group = util.uxStrNowTime(), util.arrFind(groups, function(v) return v.name == groupname end)
-    local msg = { txt = message, time = now, cat = cat }
+    local msg = { txt = message, time = now, cat = cat, sep = sep }
     if not group then
         group = { time = now, name = groupname, msgs = { msg } }
         groups[1 + #groups] = group

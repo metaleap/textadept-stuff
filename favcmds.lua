@@ -61,15 +61,16 @@ local function fillInCmd(cmd)
 end
 
 
-local function notifyEmit(cmd, msg, cat)
-    notify.emit('`'..cmd..'`', msg, cat)
+local function notifyEmit(cmd, msg, cat, sep)
+    notify.emit('`'..cmd..'`', msg, cat, sep)
 end
 
 
 local function notifyDone(cmd, success, reason, exitcode)
     notifyEmit(cmd,
                 (success and 'finished: ' or 'failed: ') .. reason .. ' ' .. (exitcode and tostring(exitcode) or ''),
-                success and '' or '')
+                success and '' or '',
+                true)
 end
 
 
