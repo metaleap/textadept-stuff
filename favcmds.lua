@@ -70,7 +70,7 @@ local function onCmd(favCmd, pipeBufOrSel)
 
             local proc = util.osSpawnProc(cmd, '\n', println, '\n', println, false, function(errmsg, exitcode)
                 local success, reason = (exitcode == 0), (errmsg or 'exit')
-                notify.emit('`' .. cmd .. '` ' .. (success and 'succeeded: ' or 'failed: ') .. reason .. ' ' .. (exitcode or ''))
+                notify.emit("`"..cmd.."`", (success and 'finished: ' or 'failed: ') .. reason .. ' ' .. (exitcode or ''))
             end)
             if proc then
                 if pipeBufOrSel then proc:write(util.bufSelText(true)) end
@@ -99,7 +99,7 @@ local function onSh(favCmd, pipeBufOrSel)
                 ui._print(tabtitle, ln)
             end
             local success, reason, exitcode = f:close()
-            notify.emit('`' .. cmd .. '` ' .. (success and 'succeeded: ' or 'failed: ') .. reason .. ' ' .. tostring(exitcode))
+            notify.emit('`'..cmd..'`', (success and 'finished: ' or 'failed: ') .. reason .. ' ' .. tostring(exitcode))
         end
     end
 end

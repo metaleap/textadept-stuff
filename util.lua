@@ -137,6 +137,13 @@ function util.uxStrNowTime(pref, suff)
 end
 
 
+function util.arrFind(arr, chk)
+    for _, val in ipairs(arr) do
+        if chk(val) then return val end
+    end
+end
+
+
 function util.osSpawnProc(cmd, stdoutSplitSep, onStdout, stderrSplitSep, onStdErr, nonWritable, onFailOrExit)
     local lnout, lnerr = '', ''
 

@@ -5,19 +5,7 @@ local util = require 'metaleap_zentient.util'
 
 
 local strIcon = '' -- ''
-local menu, menuPos, timeLastEmit
-
-
-local function ensureMenu()
-    textadept.menu.menubar[menuPos] = menu
-end
-
-
-local function clearMenu()
-    menu = { title = strIcon }
-    menu[1 + #menu] = { '', function() end }
-    ensureMenu()
-end
+local menu, menuPos, timeLastEmit, groups
 
 
 local function showDetails(msg)
@@ -25,30 +13,62 @@ local function showDetails(msg)
 end
 
 
-function notify.emit(msg)
-    timeLastEmit = os.time()
-    menu.title = strIcon..' '..util.uxStrMenuable(msg)
+local function menuApply()
+    textadept.menu.menubar[menuPos] = menu
+end
 
-    if 1 == #menu then
-        table.insert(menu, 1, { '', clearMenu })
-        table.insert(menu, 1, { '' })
+
+local function menuBuild()
+    menu = { title = strIcon }
+    menu[1 + #menu] = { '', function() end }
+
+    if #groups > 0 then
+        menu[1 + #menu] = { '', menuClear }
+        menu[1 + #menu] = { '' }
+        for _, group in ipairs(groups) do
+            if #group.msgs == 1 then
+                local msg = group.msgs[1]
+                local txt = (msg.cat or '') .. msg.txt
+                menu[1 + #menu] = { util.uxStrMenuable(util.uxStrNowTime() .. group.name .. ' » ' .. txt),
+                                    function() showDetails(msg.txt) end }
+            else
+            end
+        end
+    end
+    menuApply()
+end
+
+
+local function menuClear()
+    groups = {}
+    menuBuild()
+    menuApply()
+end
+
+
+function notify.emit(groupname, message, cat)
+    local now, group = os.time(), util.arrFind(groups, function(v) return v.name == groupname end)
+    local msg = { txt = message, time = now, cat = cat }
+    if not group then
+        group = { time = now, name = groupname, msgs = { msg } }
+        groups[1 + #groups] = group
+    else
+        group.msgs[1 + #group.msgs] = msg
     end
 
-    table.insert(menu, 1, { util.uxStrMenuable(util.uxStrNowTime() .. msg),
-                            function() showDetails(msg) end })
-    ensureMenu()
+    timeLastEmit, menu.title = now, strIcon..' '..groupname..' » '..util.uxStrMenuable(message)
+    menuBuild()
 end
 
 
 function notify.init()
     menuPos = 1 + #textadept.menu.menubar
-
-    clearMenu()
+    menuClear()
 
     events.connect(events.DWELL_START, function()
         if timeLastEmit and menu.title ~= strIcon and 23 < (os.time() - timeLastEmit) then
-            textadept.menu.menubar[menuPos].title = strIcon
-            ensureMenu()
+            menu.title = strIcon
+            textadept.menu.menubar[menuPos].title = menu.title
         end
     end)
 end
