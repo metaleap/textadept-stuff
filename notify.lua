@@ -28,7 +28,7 @@ local function menuBuild(title)
         for _, group in ipairs(groups) do
             if #group.msgs == 1 then
                 local msg = group.msgs[1]
-                local txt = (msg.cat or '') .. msg.txt
+                local txt = (msg.cat or '')..'\t'.. msg.txt
                 menu[1 + #menu] = { util.uxStrMenuable(util.uxStrNowTime() .. group.name .. '\t»\t' .. txt),
                                     function() showDetails(msg.txt) end }
             else
