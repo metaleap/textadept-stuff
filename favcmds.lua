@@ -61,6 +61,13 @@ local function fillInCmd(cmd)
 end
 
 
+local function notifyDone(cmd, success, reason, exitcode)
+    notify.emit('`'..cmd..'`',
+                (success and 'finished: ' or 'failed: ') .. reason .. ' ' .. (exitcode and tostring(exitcode) or ''),
+                success and '' or '')
+end
+
+
 local function onCmd(favCmd, pipeBufOrSel)
     return function()
         local cmd = fillInCmd(favCmd)
@@ -70,9 +77,7 @@ local function onCmd(favCmd, pipeBufOrSel)
 
             local proc = util.osSpawnProc(cmd, '\n', println, '\n', println, false, function(errmsg, exitcode)
                 local success, reason = (exitcode == 0), (errmsg or 'exit')
-                notify.emit("`"..cmd.."`",
-                            (success and 'finished: ' or 'failed: ') .. reason .. ' ' .. (exitcode or ''),
-                            success and '' or '')
+                notifyDone(cmd, success, reason, exitcode)
             end)
             if proc then
                 if pipeBufOrSel then proc:write(util.bufSelText(true)) end
@@ -81,7 +86,6 @@ local function onCmd(favCmd, pipeBufOrSel)
         end
     end
 end
-
 
 local function onSh(favCmd, pipeBufOrSel)
     return function()
@@ -101,9 +105,7 @@ local function onSh(favCmd, pipeBufOrSel)
                 ui._print(tabtitle, ln)
             end
             local success, reason, exitcode = f:close()
-            notify.emit('`'..cmd..'`',
-                        (success and 'finished: ' or 'failed: ') .. reason .. ' ' .. tostring(exitcode),
-                        success and '' or '')
+            notifyDone(cmd, success, reason, exitcode)
         end
     end
 end

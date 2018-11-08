@@ -25,13 +25,23 @@ local function menuBuild(title)
     if #groups > 0 then
         menu[1 + #menu] = { '', menuClear }
         menu[1 + #menu] = { '' }
-        for _, group in ipairs(groups) do
-            if #group.msgs == 1 then
+        for g = #groups, 1, -1 do
+            local group = groups[g]
+            if #group.msgs == 1 and nil then
                 local msg = group.msgs[1]
-                local txt = (msg.cat or '')..'  '.. msg.txt
-                menu[1 + #menu] = { util.uxStrMenuable(util.uxStrNowTime() .. group.name .. '  »  ' .. txt),
+                local txt = (msg.cat or '')..'\t '.. msg.txt
+                menu[1 + #menu] = { util.uxStrMenuable(msg.time .. group.name .. '  »  ' .. txt),
                                     function() showDetails(msg.txt) end }
             else
+                local lastmsg = group.msgs[#group.msgs]
+                local submenu = { title = lastmsg.time..(lastmsg.cat or '')..'\t '..group.name}
+                for m = #group.msgs, 1, -1 do
+                    local msg = group.msgs[m]
+                    local txt = (msg.cat or '')..'\t '.. msg.txt
+                    submenu[1 + #submenu] = { util.uxStrMenuable(msg.time .. txt),
+                                                function() showDetails(msg.txt) end }
+                end
+                menu[1 + #menu] = submenu
             end
         end
     end
@@ -47,7 +57,7 @@ end
 
 
 function notify.emit(groupname, message, cat)
-    local now, group = os.time(), util.arrFind(groups, function(v) return v.name == groupname end)
+    local now, group = util.uxStrNowTime(), util.arrFind(groups, function(v) return v.name == groupname end)
     local msg = { txt = message, time = now, cat = cat }
     if not group then
         group = { time = now, name = groupname, msgs = { msg } }
@@ -56,7 +66,7 @@ function notify.emit(groupname, message, cat)
         group.msgs[1 + #group.msgs] = msg
     end
 
-    timeLastEmit = now
+    timeLastEmit = os.time()
     menuBuild((cat or strIcon)..'  '..groupname..'  »  '..util.uxStrMenuable(message))
 end
 
