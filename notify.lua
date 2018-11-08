@@ -28,8 +28,8 @@ local function menuBuild(title)
         for _, group in ipairs(groups) do
             if #group.msgs == 1 then
                 local msg = group.msgs[1]
-                local txt = (msg.cat or '')..'\t'.. msg.txt
-                menu[1 + #menu] = { util.uxStrMenuable(util.uxStrNowTime() .. group.name .. '\t»\t' .. txt),
+                local txt = (msg.cat or '')..'  '.. msg.txt
+                menu[1 + #menu] = { util.uxStrMenuable(util.uxStrNowTime() .. group.name .. '  »  ' .. txt),
                                     function() showDetails(msg.txt) end }
             else
             end
@@ -57,7 +57,7 @@ function notify.emit(groupname, message, cat)
     end
 
     timeLastEmit = now
-    menuBuild((cat or strIcon)..'  '..groupname..'\t»\t'..util.uxStrMenuable(message))
+    menuBuild((cat or strIcon)..'  '..groupname..'  »  '..util.uxStrMenuable(message))
 end
 
 
