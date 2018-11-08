@@ -137,7 +137,7 @@ function util.uxStrNowTime(pref, suff)
 end
 
 
-function util.osSpawnProc(cmd, stdoutSplitSep, onStdout, stderrSplitSep, onStdErr, nonWritable, onExit)
+function util.osSpawnProc(cmd, stdoutSplitSep, onStdout, stderrSplitSep, onStdErr, nonWritable, onFailOrExit)
     local lnout, lnerr = '', ''
 
     local onstdout, onstderr, onexit = function(txt)
@@ -161,11 +161,15 @@ function util.osSpawnProc(cmd, stdoutSplitSep, onStdout, stderrSplitSep, onStdEr
     end, function(exitcode)
         if lnout ~= '' then onStdout(lnout) end
         if lnerr ~= '' then onStderr(lnerr) end
-        if onExit then onExit(exitcode) end
+        if onFailOrExit then onFailOrExit(nil, exitcode) end
     end
 
-    local proc = os.spawn(cmd, onstdout, onstderr, onexit)
-    if nonWritable then proc:close() end
+    local proc, errmsg = os.spawn(cmd, onstdout, onstderr, onexit)
+    if (not proc) then
+        if onFailOrExit then onFailOrExit(errmsg, nil) end
+    elseif nonWritable then
+        proc:close()
+    end
     return proc
 end
 

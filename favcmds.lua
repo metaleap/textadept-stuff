@@ -68,13 +68,14 @@ local function onCmd(favCmd, pipeBufOrSel)
             local tabtitle = util.uxStrNowTime() .. cmd
             local println = function(txt) ui._print(tabtitle, txt) end
 
-            local proc = util.osSpawnProc(cmd, '\n', println, '\n', println, false, function(exitcode)
-                notify.emit('`' .. cmd .. '` exit code: ' .. tostring(exitcode))
+            local proc = util.osSpawnProc(cmd, '\n', println, '\n', println, false, function(errmsg, exitcode)
+                local success, reason = (exitcode == 0), (errmsg or 'exit')
+                notify.emit('`' .. cmd .. '` ' .. (success and 'succeeded: ' or 'failed: ') .. reason .. ' ' .. (exitcode or ''))
             end)
-            if pipeBufOrSel then
-                proc:write(util.bufSelText(true))
+            if proc then
+                if pipeBufOrSel then proc:write(util.bufSelText(true)) end
+                proc:close()
             end
-            proc:close()
         end
     end
 end
@@ -93,11 +94,12 @@ local function onSh(favCmd, pipeBufOrSel)
         end
         if #cmd > 0 then
             local tabtitle = util.uxStrNowTime() .. cmd
-            f = io.popen(cmd, 'r')
+            f, x, y, z = io.popen(cmd, 'r')
             for ln in f:lines() do
                 ui._print(tabtitle, ln)
             end
-            f:close()
+            local success, reason, exitcode = f:close()
+            notify.emit('`' .. cmd .. '` ' .. (success and 'succeeded: ' or 'failed: ') .. reason .. ' ' .. tostring(exitcode))
         end
     end
 end
