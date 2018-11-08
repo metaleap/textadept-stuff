@@ -57,7 +57,7 @@ function notify.emit(groupname, message, cat)
     end
 
     timeLastEmit = now
-    menuBuild(cat or strIcon..' '..groupname..'\t»\t'..util.uxStrMenuable(message))
+    menuBuild((cat or strIcon)..'  '..groupname..'\t»\t'..util.uxStrMenuable(message))
 end
 
 
