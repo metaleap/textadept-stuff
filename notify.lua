@@ -20,11 +20,7 @@ end
 
 local function menuBuild(title)
     menu = { title = title or strIcon }
-    menu[1 + #menu] = { '', function() end }
-
     if #groups > 0 then
-        menu[1 + #menu] = { '', menuClear }
-        menu[1 + #menu] = { '' }
         for g = #groups, 1, -1 do
             local group = groups[g]
             if #group.msgs == 1 and nil then
@@ -44,7 +40,10 @@ local function menuBuild(title)
                 menu[1 + #menu] = submenu
             end
         end
+        menu[1 + #menu] = { '' }
+        menu[1 + #menu] = { '', menuClear }
     end
+    menu[1 + #menu] = { '', function() end }
     menuApply()
 end
 
@@ -67,7 +66,7 @@ function notify.emit(groupname, message, cat)
     end
 
     timeLastEmit = os.time()
-    menuBuild((cat or strIcon)..'  '..groupname..'  »  '..util.uxStrMenuable(message))
+    menuBuild(strIcon..'  '..groupname..'  »  '..util.uxStrMenuable(message))
 end
 
 
