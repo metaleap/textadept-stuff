@@ -116,7 +116,7 @@ end
 
 -- opens dialog to select "recent files" to open, but sorted by most-recently-
 -- closed and without listing files that are already currently opened
-local function setupRecentlyClosed()
+local function setupRecentlyClosedDialog()
     util.resetBag['ux.recentlyClosedFiles'] = {
         get = function() return recentlyClosedFiles end,
         set = function(v) recentlyClosedFiles = v end,
@@ -414,7 +414,7 @@ function ux.init()
     setupShowCurFileFullPath()
     setupSaneBuftabLabels()
     keys[ux.keysReopenClosedBuftabs] = setupReopenClosedBuftabs()
-    keys[ux.keysReopenClosedDialog] = setupRecentlyClosed()
+    keys[ux.keysReopenClosedDialog] = setupRecentlyClosedDialog()
     setupBuftabCloseOthers()
     setupBuftabSelStateRecall()
     setupAutoEnclosers()
