@@ -6,6 +6,7 @@ local notify = require 'metaleap_zentient.notify'
 
 
 local menuPos
+local cmdsRunning = {}
 
 
 local function fillInCmd(cmd)
@@ -75,34 +76,51 @@ end
 
 
 local function cmdState(favCmd, cmdStr)
-    local tabtitle = util.uxStrNowTime() .. cmdStr
-    local stdout, stderr = { lns = {} }, { lns = {} }
-    local action = function()
+    local strnow, stdoutlns, stderrlns = util.uxStrNowTime(), {}, {}
+    local ensurebuf = function(e, curln, canopen)
+        if canopen == nil then canopen = true end
+        local tabtitle = (e and '‹stderr› ' or '‹stdout› ') .. strnow .. cmdStr
         local buf = util.bufBy(nil, tabtitle, false) or util.bufBy(nil, tabtitle..'*', false)
+        local lns = e and stderrlns or stdoutlns
         if not buf then
-            for _, ln in ipairs(stdout.lns) do
-                ui._print(tabtitle, ln)
+            if canopen then
+                for _, ln in ipairs(lns) do
+                    ui._print(tabtitle, ln)
+                end
             end
+        elseif curln then
+            buf:append_text(curln..'\n')
+            buf:set_sel(-1, -1)
         else
             buf:set_text('')
-            for _, ln in ipairs(stdout.lns) do
+            for _, ln in ipairs(lns) do
                 buf:append_text(ln..'\n')
             end
+            buf:set_sel(-1, -1)
             view:goto_buffer(buf)
         end
     end
-    local onstdout = function(ln)
-        stdout.lns[1 + #stdout.lns] = ln
-        if favCmd.stdout and favCmd.stdout.lnNotify then
-            notifyEmit(cmdStr, ln, '', action)
+    local action = function(openout, openerr)
+        if openout == nil and openerr == nil then
+            openout, openerr = #stdoutlns > 0, #stderrlns > 0
         end
+        if openout then ensurebuf(false) end
+        if openerr then ensurebuf(true) end
+    end
+    local onstdout = function(ln)
+        stdoutlns[1 + #stdoutlns] = ln
+        if favCmd.stdout and favCmd.stdout.lnNotify then
+            notifyEmit(cmdStr, ln, '', function() action(true, false) end)
+        end
+        ensurebuf(false, ln, favCmd.stdout and favCmd.stdout.openBuf or false)
     end
     local onstderr = function(ln)
-        stderr.lns[1 + #stderr.lns] = ln
+        stderrlns[1 + #stderrlns] = ln
         local fce = (favCmd.stderr == true) and favCmd.stdout or favCmd.stderr
         if fce and fce.lnNotify then
-            notifyEmit(cmdStr, ln, '', action)
+            notifyEmit(cmdStr, ln, '', function() action(false, true) end)
         end
+        ensurebuf(true, ln, fce and fce.openBuf or false)
     end
     return onstdout, onstderr, action
 end
@@ -112,11 +130,24 @@ local function onCmd(favCmd)
     return function()
         local cmdstr = fillInCmd(favCmd.cmd)
         if #cmdstr > 0 then
+            local cur = cmdsRunning[cmdstr]
+            if cur then
+                local btn = ui.dialogs.msgbox{ title = cmdstr, text = "is still running:", button2 = "_Kill", button3 = "_Show" }
+                if btn == 2 then
+                    cur.kill()
+                elseif btn == 3 then
+                    cur.show()
+                end
+                return
+            end
+
             local onstdout, onstderr, action = cmdState(favCmd, cmdstr)
-            local proc = util.osSpawnProc(cmdstr, '\n', onstdout, '\n', onstderr, false, function(errmsg, exitcode)
+            local proc = util.osSpawnProc(cmdstr, '\n', onstdout, '\n', onstderr, function(errmsg, exitcode)
+                cmdsRunning[cmdstr] = nil
                 notifyDone(cmdstr, action, exitcode == 0, errmsg or 'exit', exitcode)
             end)
             if proc then
+                cmdsRunning[cmdstr] = { show = action, kill = function() proc:kill() end }
                 if favCmd.pipeBufText then proc:write(util.bufSelText(true)) end
                 proc:close()
             end
@@ -126,24 +157,24 @@ end
 
 local function onSh(favCmd)
     return function()
-        local cmd = fillInCmd(favCmd.sh)
+        local cmdstr = fillInCmd(favCmd.sh)
         if favCmd.pipeBufText then
             if buffer.filename and buffer.selection_empty and not buffer.modify then
-                cmd = "cat '" .. buffer.filename .. "' | " .. cmd
+                cmdstr = "cat '" .. buffer.filename .. "' | " .. cmdstr
             else
                 local src = (util.bufSelText() or buffer:get_text()):gsub("\"", "\\\"")
-                cmd = "echo \"" .. src .. "\" | " .. cmd
+                cmdstr = "echo \"" .. src .. "\" | " .. cmdstr
             end
         end
-        if #cmd > 0 then
-            local tabtitle = util.uxStrNowTime() .. cmd
-            local sh, errmsg, code = io.popen(cmd, 'r')
+        if #cmdstr > 0 then
+            local sh, errmsg, code = io.popen(cmdstr, 'r')
+            local onstdout, _unused, action
             if sh then
-                local onstdout = cmdState(favCmd, cmd)
+                onstdout, _unused, action = cmdState(favCmd, cmdstr)
                 for ln in sh:lines() do onstdout(ln) end
                 sh, errmsg, code = sh:close()
             end
-            notifyDone(cmd, nil, sh, errmsg, code)
+            notifyDone(cmdstr, action, sh, errmsg, code)
         end
     end
 end

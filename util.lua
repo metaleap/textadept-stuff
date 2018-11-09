@@ -187,7 +187,7 @@ function util.strTrimLeft(s) -- , dbg)
 end
 
 
-function util.osSpawnProc(cmd, stdoutSplitSep, onStdout, stderrSplitSep, onStdErr, nonWritable, onFailOrExit)
+function util.osSpawnProc(cmd, stdoutSplitSep, onStdout, stderrSplitSep, onStderr, onFailOrExit)
     local lnout, lnerr = '', ''
 
     local onstdout, onstderr, onexit = function(txt)
@@ -217,8 +217,6 @@ function util.osSpawnProc(cmd, stdoutSplitSep, onStdout, stderrSplitSep, onStdEr
     local proc, errmsg = os.spawn(cmd, onstdout, onstderr, onexit)
     if (not proc) then
         if onFailOrExit then onFailOrExit(errmsg, nil) end
-    elseif nonWritable then
-        proc:close()
     end
     return proc
 end

@@ -6,6 +6,7 @@ local util = require 'metaleap_zentient.util'
 
 local strIcon = '' -- ''
 local menu, menuPos, timeLastEmit, groups
+local menuBuild, menuClear -- predeclare the 2 local funcs that rely on each other
 
 
 local function showDetails(msg)
@@ -25,7 +26,7 @@ local function menuItem(msg, prefix)
 end
 
 
-local function menuBuild(title, dropGroupIdx)
+menuBuild = function(title, dropGroupIdx)
     menu = { title = title or strIcon }
     if dropGroupIdx then table.remove(groups, dropGroupIdx) end
     if #groups > 0 then
@@ -60,7 +61,7 @@ local function menuBuild(title, dropGroupIdx)
 end
 
 
-local function menuClear()
+menuClear = function()
     groups = {}
     menuBuild()
     menuApply()
