@@ -85,6 +85,9 @@ function notify.emit(groupname, message, cat, action, sep)
     end
     timeLastEmit = os.time()
     menuBuild(strIcon..'  '..groupname..'  »  '..util.uxStrMenuable(message))
+    timeout(11, function()
+        if 11 <= (os.time() - timeLastEmit) then menuTitleClear() end
+    end)
 end
 
 
