@@ -14,6 +14,12 @@ local function showDetails(msg)
 end
 
 
+local function menuTitleClear()
+    menu.title = strIcon
+    textadept.menu.menubar[menuPos].title = menu.title
+end
+
+
 local function menuApply()
     textadept.menu.menubar[menuPos] = menu
 end
@@ -56,7 +62,7 @@ menuBuild = function(title, dropGroupIdx)
         menu[1 + #menu] = { '' }
         menu[1 + #menu] = { '', menuClear }
     end
-    menu[1 + #menu] = { '', function() end }
+    menu[1 + #menu] = { '', menuTitleClear }
     menuApply()
 end
 
@@ -85,12 +91,6 @@ end
 function notify.init()
     menuPos = 1 + #textadept.menu.menubar
     menuClear()
-    events.connect(events.DWELL_START, function()
-        if timeLastEmit and menu.title ~= strIcon and 23 < (os.time() - timeLastEmit) then
-            menu.title = strIcon
-            textadept.menu.menubar[menuPos].title = menu.title
-        end
-    end)
 end
 
 
