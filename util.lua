@@ -187,27 +187,25 @@ function util.strTrimLeft(s) -- , dbg)
 end
 
 
-function util.osSpawnProc(cmd, stdoutSplitSep, onStdout, stderrSplitSep, onStderr, onFailOrExit)
+function util.osSpawnProc(cmd, stdoutSplitSep, onStdout, stderrSplitSep, onStderr, onFailOrExit, splitExplicitly)
     local lnout, lnerr = '', ''
 
-    local onstdout, onstderr, onexit = function(txt)
+    local ondata = function(cur, txt)
         if txt and #txt > 0 then
             if txt:sub(-1) == stdoutSplitSep then
-                onStdout(lnout..txt:sub(1, -2))
-                lnout = ''
+                onStdout(cur..txt:sub(1, -2))
+                return ''
             else
-                lnout = lnout..txt
+                return cur..txt
             end
         end
+        return cur
+    end
+
+    local onstdout, onstderr, onexit = function(txt)
+        lnout = ondata(lnout, txt)
     end, function(txt)
-        if txt and #txt > 0 then
-            if txt:sub(-1) == stderrSplitSep then
-                onStderr(lnerr..txt:sub(1, -2))
-                lnerr = ''
-            else
-                lnerr = lnerr..txt
-            end
-        end
+        lnerr = ondata(lnerr, txt)
     end, function(exitcode)
         if lnout ~= '' then onStdout(lnout) end
         if lnerr ~= '' then onStderr(lnerr) end

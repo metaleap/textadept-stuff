@@ -8,6 +8,7 @@ local favdirs = require 'metaleap_zentient.favdirs'
 local favcmds = require 'metaleap_zentient.favcmds'
 local notify = require 'metaleap_zentient.notify'
 local srcmod = require 'metaleap_zentient.srcmod'
+local ipc = require 'metaleap_zentient.ipc'
 
 
 me.langProgs = {}
@@ -21,6 +22,7 @@ function me.startUp()
     favcmds.init(me.favCmds)
     notify.init()
     srcmod.init()
+    ipc.init(me.langProgs)
 end
 
 
