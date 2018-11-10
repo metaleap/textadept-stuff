@@ -172,18 +172,18 @@ end
 
 -- avoiding patterns for such fundamental hi-freq aspire-to-realtime ops
 function util.strTrimLeft(s) -- , dbg)
-    local len = #s
-    if (not s) or len == 0 then return '' end
+    local len = s and #s or 0
+    if len == 0 then return '' end
     local pos = 0
     for i = 1, len do
-        local chr = s:sub(i, i)
-        if not (chr==' ' or chr=='	' or chr=='\t' or chr=='\r' or chr=='\n' or chr=='\v' or chr=='\b') then
+        local c = s:sub(i, i)
+        if not (c==' ' or c=='	' or c=='\t' or c=='\r' or c=='\n' or c=='\v' or c=='\b') then
             --if i == 1 and dbg then ui.print(string.format("HUH::%q::",chr)) end
             pos = i
             break
         end
     end
-    return (pos ~= 0) and ((pos == 1) and s or s:sub(pos)) or ''
+    return (pos == 0) and '' or ((pos == 1) and s or s:sub(pos))
 end
 
 
