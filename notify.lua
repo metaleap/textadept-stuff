@@ -4,7 +4,7 @@ local util = require 'metaleap_zentient.util'
 
 
 
-local strIcon = '   ' -- ''
+local strIcon = '  ' -- ''
 local menu, menuPos, timeLastEmit, groups
 local menuBuild, menuClear -- predeclare the 2 local funcs that rely on each other
 
@@ -33,7 +33,7 @@ end
 
 
 menuBuild = function(title, dropGroupIdx)
-    menu = { title = title or strIcon }
+    menu = { title = title and (title .. '  ') or strIcon }
     if dropGroupIdx then table.remove(groups, dropGroupIdx) end
     if #groups > 0 then
         table.sort(groups, function(dis, dat)
@@ -84,7 +84,7 @@ function notify.emit(groupname, message, cat, action, sep)
         group.msgs[1 + #group.msgs] = msg
     end
     timeLastEmit = os.time()
-    menuBuild(strIcon..'  '..groupname..'  »  '..util.uxStrMenuable(message))
+    menuBuild(strIcon..groupname..'  »  '..util.uxStrMenuable(message))
     timeout(11, function()
         if 11 <= (os.time() - timeLastEmit) then menuTitleClear() end
     end)
