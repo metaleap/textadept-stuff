@@ -4,7 +4,7 @@ local util = require 'metaleap_zentient.util'
 
 
 
-local strIcon = '' -- ''
+local strIcon = '   ' -- ''
 local menu, menuPos, timeLastEmit, groups
 local menuBuild, menuClear -- predeclare the 2 local funcs that rely on each other
 
