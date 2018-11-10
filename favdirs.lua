@@ -91,7 +91,7 @@ function favdirs.init(favDirs)
         end }
 
         menu[1 + #menu] = { '' }
-        menu[1 + #menu] = { '', function() end }
+        menu[1 + #menu] = { '', freshmenu }
         textadept.menu.menubar[menuPos] = menu
     end
 
