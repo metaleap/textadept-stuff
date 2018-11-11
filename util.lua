@@ -170,6 +170,28 @@ function util.strBreakOn(s, beforestr, suffix)
 end
 
 
+-- caution: drops all empties
+function util.strSplit(s, sep)
+    local len = s and #s or 0
+    local start, strs = 1, {}
+    if len > 0 then
+        for i = 1, len do
+            local c = s:sub(i, i)
+            if c == sep then
+                if i > start then strs[1 + #strs] = s:sub(start, i - 1) end
+                start = i + 1
+            end
+        end
+        if start == 1 then
+            strs[1 + #strs] = s
+        elseif start <= len then
+            strs[1 + #strs] = s:sub(start)
+        end
+    end
+    return strs
+end
+
+
 -- avoiding patterns for such fundamental hi-freq aspire-to-realtime ops
 function util.strTrimLeft(s) -- , dbg)
     local len = s and #s or 0
@@ -187,13 +209,20 @@ function util.strTrimLeft(s) -- , dbg)
 end
 
 
-function util.osSpawnProc(cmd, stdoutSplitSep, onStdout, stderrSplitSep, onStderr, onFailOrExit, splitExplicitly)
+function util.osSpawnProc(cmd, stdoutSplitSep, onStdout, stderrSplitSep, onStderr, onFailOrExit, ensureChunksSplit)
     local lnout, lnerr = '', ''
 
     local ondata = function(cur, txt)
         if txt and #txt > 0 then
             if txt:sub(-1) == stdoutSplitSep then
-                onStdout(cur..txt:sub(1, -2))
+                local ln = cur..txt:sub(1, -2)
+                if not ensureChunksSplit then
+                    onStdout(ln)
+                else
+                    for _, lnreal in ipairs(util.strSplit(ln, '\n')) do
+                        onStdout(lnreal)
+                    end
+                end
                 return ''
             else
                 return cur..txt
