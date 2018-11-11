@@ -11,13 +11,17 @@ local menuMain, menuIntel, menuQuery
 
 local function onProcStderr(lang, progName)
     return function(ln)
-        io.stderr:write()
+        io.stderr:write(ln)
     end
 end
 
 
 local function onProcStdout(lang, progName)
-    return function()
+    return function(ln)
+        local silent = ui.silent_print
+        ui.silent_print = true
+        ui._print('Z', ln)
+        ui.silent_print = silent
     end
 end
 
