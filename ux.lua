@@ -229,17 +229,17 @@ local function setupShowCurDirPath()
         end
     end
 
+    local ensure = function()
+        textadept.menu.menubar[1].title = menutitle()
+    end
+
     local menu = { title = menutitle() }
     for _, stdmenu in ipairs(textadept.menu.menubar) do
         menu[1 + #menu] = stdmenu
     end
     menu[1 + #menu] = { '' }
-    menu[1 + #menu] = { '', function() end }
+    menu[1 + #menu] = { '', ensure }
     textadept.menu.menubar = { menu }
-
-    local ensure = function()
-        textadept.menu.menubar[1].title = menutitle()
-    end
 
     events.connect(events.FILE_AFTER_SAVE, ensure)
     events.connect(util.eventBufSwitch, ensure)
