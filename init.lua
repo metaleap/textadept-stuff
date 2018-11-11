@@ -26,5 +26,14 @@ function me.startUp()
 end
 
 
+function me.init()
+    events.connect(events.BUFFER_NEW, function()
+        if not buffer.bufid then buffer.bufid = tostring(math.random() * os.clock() * os.time()) end
+    end)
+
+    events.connect(events.INITIALIZED, me.startUp)
+end
+
+
 
 return me

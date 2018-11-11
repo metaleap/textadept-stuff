@@ -63,7 +63,7 @@ local function setupSaneBuftabLabels()
         end
     end
 
-    events.connect(events.BUFFER_DELETED, ensure)
+    events.connect(events.BUFFER_NEW, ensure)
     events.connect(util.eventBufSwitch, ensure)
     events.connect(events.FILE_AFTER_SAVE, ensure)
     events.connect(events.UPDATE_UI, function(upd)
@@ -93,7 +93,7 @@ local function setupReopenClosedBuftabs()
         end
     end)
 
-    events.connect(events.BUFFER_DELETED, function()
+    events.connect(events.BUFFER_NEW, function()
         for i = #currentlyOpenedFiles, 1, -1 do
             local fullFilePath, found = currentlyOpenedFiles[i], false
             for _, buf in ipairs(_BUFFERS) do
