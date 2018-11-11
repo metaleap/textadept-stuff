@@ -10,7 +10,8 @@ local menuMain, menuIntel, menuQuery
 
 
 local function onProcStderr(lang, progName)
-    return function()
+    return function(ln)
+        io.stderr:write()
     end
 end
 

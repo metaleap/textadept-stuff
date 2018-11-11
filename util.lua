@@ -210,34 +210,34 @@ end
 
 
 function util.osSpawnProc(cmd, stdoutSplitSep, onStdout, stderrSplitSep, onStderr, onFailOrExit, ensureChunksSplit)
-    local lnout, lnerr = '', ''
+    local strout, strerr = '', ''
 
-    local ondata = function(cur, txt)
-        if txt and #txt > 0 then
-            if txt:sub(-1) == stdoutSplitSep then
-                local ln = cur..txt:sub(1, -2)
+    local ondata = function(cur, data, onchunk)
+        if data and #data > 0 then
+            if data:sub(-1) == stdoutSplitSep then
+                local strdata = cur..data:sub(1, -2)
                 if not ensureChunksSplit then
-                    onStdout(ln)
+                    onchunk(strdata)
                 else
-                    for _, lnreal in ipairs(util.strSplit(ln, '\n')) do
-                        onStdout(lnreal)
+                    for _, strsub in ipairs(util.strSplit(strdata, '\n')) do
+                        onchunk(strsub)
                     end
                 end
                 return ''
             else
-                return cur..txt
+                return cur..data
             end
         end
         return cur
     end
 
-    local onstdout, onstderr, onexit = function(txt)
-        lnout = ondata(lnout, txt)
-    end, function(txt)
-        lnerr = ondata(lnerr, txt)
+    local onstdout, onstderr, onexit = function(data)
+        strout = ondata(strout, data, onStdout)
+    end, function(data)
+        strerr = ondata(strerr, data, onStderr)
     end, function(exitcode)
-        if lnout ~= '' then onStdout(lnout) end
-        if lnerr ~= '' then onStderr(lnerr) end
+        if strout ~= '' then onStdout(strout) end
+        if strerr ~= '' then onStderr(strerr) end
         if onFailOrExit then onFailOrExit(nil, exitcode) end
     end
 
