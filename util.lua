@@ -41,8 +41,12 @@ end
 -- if `homeTilde` and `path` is prefixed with (actual, current) `$HOME/`, the prefix is changed to `~/`.
 -- if `spacedSlashes`, all slashes get surrounded by white-space.
 function util.fsPathPrettify(path, homeTilde, spacedSlashes)
-    if homeTilde and path:sub(1, #envHomeSlash) == envHomeSlash then
-        path = '~' .. path:sub(#envHomeSlash)
+    if homeTilde then
+        if envHomeSlash == path:sub(1, #envHomeSlash) then
+            path = '~' .. path:sub(#envHomeSlash)
+        elseif util.envHome == path then
+            path = '~'
+        end
     end
     if spacedSlashes then
         path = path:gsub('/', ' / ')

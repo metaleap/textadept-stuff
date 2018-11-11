@@ -219,10 +219,14 @@ end
 
 
 -- all built-in menus are relocated under a single top-level menu that always
--- shows the full dir path of the currently active buf-tab
-local function setupShowCurFileFullPath()
+-- shows the full dir path of the currently active buf-tab (or defaulting to $PWD)
+local function setupShowCurDirPath()
     local menutitle = function()
-        return util.uxStrMenuable(util.fsPathPrettify(util.fsPathParentDir(buffer.filename or buffer.bufname or buffer.tab_label), true, true)) .. '\t'
+        if buffer.filename then
+            return util.uxStrMenuable(util.fsPathPrettify(util.fsPathParentDir(buffer.filename), true, true)) .. '\t'
+        else
+            return util.uxStrMenuable(util.fsPathPrettify(lfs.currentdir(), true, true)) .. '\t'
+        end
     end
 
     local menu = { title = menutitle() }
@@ -452,7 +456,7 @@ function ux.init()
     keys.a8 = function() goToBuftab(8) end
     keys.a9 = function() goToBuftab(9) end
 
-    setupShowCurFileFullPath()
+    setupShowCurDirPath()
     setupSaneBuftabLabels()
     keys[ux.keysReopenClosedBuftabs] = setupReopenClosedBuftabs()
     keys[ux.keysReopenClosedDialog] = setupRecentlyClosedDialog()
