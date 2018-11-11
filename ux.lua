@@ -33,8 +33,13 @@ end
 -- ensures no duplicate tab labels by including file paths when necessary
 local function setupSaneBuftabLabels()
     local relabel = function(buf, label)
+        -- note: if tweaking pref/suff forms, also adjust needle2 in util.bufBy
         local namepref, namesuff = '    ', '    '
         if buf.modify then namepref, namesuff = '    ', '      ' end
+        if not buf.filename then
+            namepref, namesuff = '  '..(buf.buficon or '')..'  ', '    '
+        end
+
         local tablabel = namepref..label..namesuff
         if buf.tab_label ~= tablabel then buf.tab_label = tablabel end
     end
@@ -42,30 +47,43 @@ local function setupSaneBuftabLabels()
     local ensure = function()
         local all = {}
         for _, buf in ipairs(_BUFFERS) do
+            local name
             if buf.filename then
-                filebasename = util.fsPathBaseName(buf.filename)
-                local byname = all[filebasename]
-                if byname == nil then
-                    all[filebasename] = { buf }
-                    relabel(buf, filebasename)
-                else
-                    byname[1 + #byname] = buf
-                end
+                name = util.fsPathBaseName(buf.filename)
+            elseif buf.bufname then
+                name = buf.bufname
+            else
+                buf.bufname = buf.tab_label
+                name = buf.bufname
+            end
+            local byname = all[name]
+            if byname then
+                byname[1 + #byname] = buf
+            else
+                all[name] = { buf }
+                relabel(buf, name)
             end
         end
 
         for _, bufs in pairs(all) do
             if #bufs > 1 then -- name occurs more than once
                 for _, buf in ipairs(bufs) do
-                    relabel(buf, util.fsPathPrettify(buf.filename, true, false))
+                    if buf.filename then
+                        relabel(buf, util.fsPathPrettify(buf.filename, true, false))
+                    end
                 end
             end
         end
     end
 
-    events.connect(events.BUFFER_NEW, ensure)
-    events.connect(util.eventBufSwitch, ensure)
     events.connect(events.FILE_AFTER_SAVE, ensure)
+    events.connect(util.eventBufSwitch, function()
+        if (not buffer.filename) and (not buffer.bufname) and buffer.tab_label == 'Untitled' then
+            timeout(1, ensure)
+        else
+            ensure()
+        end
+    end)
     events.connect(events.UPDATE_UI, function(upd)
         if util.bufIsUpdateOf(upd, buffer.UPDATE_CONTENT) then ensure() end
     end)
@@ -189,9 +207,8 @@ end
 -- buf-tab context-menu item: "close others" / close-all-but-this-tab
 local function setupBuftabCloseOthers()
     textadept.menu.tab_context_menu[1 + #textadept.menu.tab_context_menu] = { 'Close Others', function()
-        local curfilename = buffer.filename
         for _, buf in ipairs(_BUFFERS) do
-            if buf.filename == nil or buf.filename ~= curfilename then
+            if buf.bufid ~= buffer.bufid then
                 -- we don't buffer.delete(buf) as we might lose unsaved-changes
                 view:goto_buffer(buf)
                 io.close_buffer()
@@ -205,7 +222,7 @@ end
 -- shows the full dir path of the currently active buf-tab
 local function setupShowCurFileFullPath()
     local menutitle = function()
-        return util.uxStrMenuable(util.fsPathPrettify(util.fsPathParentDir(buffer.filename or buffer.tab_label), true, true)) .. '\t'
+        return util.uxStrMenuable(util.fsPathPrettify(util.fsPathParentDir(buffer.filename or buffer.bufname or buffer.tab_label), true, true)) .. '\t'
     end
 
     local menu = { title = menutitle() }
@@ -321,7 +338,7 @@ local function setupAltBuftabNav()
     }
 
     for i, buf in ipairs(_BUFFERS) do
-        local bufname = buf.filename or buf.tab_label
+        local bufname = buf.filename or buf.bufname or buf.tab_label
         if buf == buffer then
             table.insert(mru, 1, bufname)
         else
@@ -333,7 +350,7 @@ local function setupAltBuftabNav()
         if ongoing then return end
         -- any new bufs for `mru`?
         for _, buf in ipairs(_BUFFERS) do
-            local found, bufname = false, buf.filename or buf.tab_label
+            local found, bufname = false, buf.filename or buf.bufname or buf.tab_label
             for _, mr in ipairs(mru) do
                 if mr == bufname then
                     found = true
@@ -355,7 +372,7 @@ local function setupAltBuftabNav()
             end
         end
         -- is cur-buf already anywhere in `mru`? then ditch first..
-        local bufname = buffer.filename or buffer.tab_label
+        local bufname = buffer.filename or buffer.bufname or buffer.tab_label
         for i = #mru, 1, -1 do
             if mru[i] == bufname then
                 table.remove(mru, i)

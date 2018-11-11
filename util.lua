@@ -101,11 +101,12 @@ function util.bufClearHighlightedWords()
 end
 
 
-function util.bufIndexOf(bufOrBufFilePathOrBufTabLabel)
+function util.bufIndexOf(bufOrBufIdOrBufFilePathOrBufTabLabel)
     for i, buf in ipairs(_BUFFERS) do
-        if ((not bufOrBufFilePathOrBufTabLabel) and buf == buffer)
-            or bufOrBufFilePathOrBufTabLabel == buf
-                or bufOrBufFilePathOrBufTabLabel == (buf.filename or buf.tab_label)
+        if ((not bufOrBufIdOrBufFilePathOrBufTabLabel) and buf == buffer)
+            or bufOrBufIdOrBufFilePathOrBufTabLabel == buf
+            or bufOrBufIdOrBufFilePathOrBufTabLabel == buf.bufid
+            or bufOrBufIdOrBufFilePathOrBufTabLabel == (buf.filename or buf.tab_label)
         then
             return i
         end
@@ -121,9 +122,10 @@ function util.bufBy(bufId, bufFilePath, bufTabLabel, orCreateNew)
         if buf[chkfld] == needle then return buf end
     end
     if bufTabLabel then
-        local needle = needle .. '*'
+        local needle1 = needle .. '*'
         for _, buf in ipairs(_BUFFERS) do
-            if buf[chkfld] == needle then return buf end
+            local needle2 = '  ' .. (buf.buficon or '') .. '  ' .. needle .. '    '
+            if buf.tab_label == needle1 or buf.tab_label == needle2 then return buf end
         end
     end
     if orCreateNew then
