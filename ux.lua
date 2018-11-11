@@ -10,9 +10,9 @@ ux.keysReopenClosedDialog = 'cO'
 ux.keysFindIncr = 'cf'
 ux.keysFindDiag = 'cF'
 ux.keysFindWord = 'cd'
+ux.keysSwitchBuf = 'ca\t'
 
 
-local currentlyOpenedFiles = {} -- most-recently opened is last
 local recentlyClosedFiles = {} -- most-recently closed is first
 
 
@@ -76,8 +76,12 @@ end
 
 -- allows ctrl+shift+tab to reopen recently-closed tabs
 local function setupReopenClosedBuftabs()
+    local currentlyOpenedFiles = {} -- most-recently opened is last
+
     for _, buf in ipairs(_BUFFERS) do
-        currentlyOpenedFiles[1 + #currentlyOpenedFiles] = buf.filename
+        if buf.filename then
+            currentlyOpenedFiles[1 + #currentlyOpenedFiles] = buf.filename
+        end
     end
 
     events.connect(events.FILE_OPENED, function(fullFilePath)
@@ -131,11 +135,11 @@ local function setupRecentlyClosedDialog()
                 filelistitems[1 + #filelistitems] = fullfilepath
             end
 
-            local button, selfiles = ui.dialogs.filteredlist {
+            local btn, selfiles = ui.dialogs.filteredlist {
                 title = 'Most recently closed:', width = 2345, height = 1234, select_multiple = true,
                 columns = { 'File:', 'Location:', 'Full Path:' }, items = filelistitems, search_column = 3,
             }
-            if button == 1 then
+            if btn == 1 then
                 local fullfilepaths = {}
                 for _, idx in ipairs(selfiles) do
                     fullfilepaths[1 + #fullfilepaths] = recentlyClosedFiles[idx]
@@ -399,6 +403,26 @@ local function setupAltBuftabNav()
 end
 
 
+local function setupBuftabSwitcher()
+    keys[ux.keysSwitchBuf] = function()
+        local elems = {}
+
+        for i, buf in ipairs(_BUFFERS) do
+            elems[1 + #elems] = buf.tab_label
+            elems[1 + #elems] = buf.filename or ''
+            elems[1 + #elems] = buf.tab_label .. '\n' .. (buf.filename or '')
+        end
+
+        local btn, item = ui.dialogs.filteredlist { title = 'WUT', items = elems,
+                                                    columns = { 'Name', 'Full Path', 'Words' },
+                                                    search_column = 3, width = 2345, height = 1234 }
+        if btn == 1 then
+            ui.print(item)
+        end
+    end
+end
+
+
 function ux.init()
     keys.a0 = function() goToBuftab(0) end
     keys.a1 = function() goToBuftab(1) end
@@ -422,6 +446,7 @@ function ux.init()
     setupHoverTips()
     --setupAutoHighlight()
     setupAltBuftabNav()
+    setupBuftabSwitcher()
 end
 
 
