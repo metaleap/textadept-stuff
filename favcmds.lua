@@ -80,7 +80,7 @@ local function cmdState(favCmd, cmdStr)
     local ensurebuf = function(e, curln, canopen)
         if canopen == nil then canopen = true end
         local tabtitle = (e and '‹stderr› ' or '‹stdout› ') .. strnow .. cmdStr
-        local buf = util.bufBy(nil, tabtitle, false) or util.bufBy(nil, tabtitle..'*', false)
+        local buf = util.bufBy(nil, nil, tabtitle, false)
         local lns = e and stderrlns or stdoutlns
         if not buf then
             if canopen then

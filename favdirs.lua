@@ -20,11 +20,11 @@ local function showFilteredListDialogOfFiles(dir, defaultFilter)
         end
     end)
 
-    local button, selfiles = ui.dialogs.filteredlist{
+    local btn, selfiles = ui.dialogs.filteredlist{
         title = util.fsPathPrettify(dir, true, true), width = 2345, height = 1234, select_multiple = true,
         text = defaultFilter, columns = 'Files:', items = filerelpathitems,
     }
-    if button == 1 then
+    if btn == 1 then
         local fullfilepaths = {}
         for _, idx in ipairs(selfiles) do
             fullfilepaths[1 + #fullfilepaths] = util.fsPathJoin(dir, filerelpaths[idx])
@@ -46,11 +46,11 @@ local function showFilteredListDialogOfDirs(favDirs)
         end
     end
 
-    local button, i = ui.dialogs.filteredlist{
+    local btn, i = ui.dialogs.filteredlist{
         title = 'Open from...', width = 2345, height = 1234,
         columns = {'Filter by:', '...then select:'}, items = dirlistitems,
     }
-    if button == 1 then
+    if btn == 1 then
         showFilteredListDialogOfFiles(fulldirpaths[i], defaultfilters[fulldirpaths[i]])
     end
 end

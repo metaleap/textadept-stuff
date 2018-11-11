@@ -114,11 +114,17 @@ function util.bufIndexOf(bufOrBufFilePathOrBufTabLabel)
 end
 
 
-function util.bufBy(bufFilePath, bufTabLabel, orCreateNew)
-    local needle = bufTabLabel or bufFilePath
-    local chkfld = bufTabLabel and 'tab_label' or 'filename'
+function util.bufBy(bufId, bufFilePath, bufTabLabel, orCreateNew)
+    local needle = bufId or bufTabLabel or bufFilePath
+    local chkfld = bufId and 'bufid' or (bufTabLabel and 'tab_label' or 'filename')
     for _, buf in ipairs(_BUFFERS) do
         if buf[chkfld] == needle then return buf end
+    end
+    if bufTabLabel then
+        local needle = needle .. '*'
+        for _, buf in ipairs(_BUFFERS) do
+            if buf[chkfld] == needle then return buf end
+        end
     end
     if orCreateNew then
         local buf = buffer.new()
