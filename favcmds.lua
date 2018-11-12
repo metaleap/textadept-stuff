@@ -148,7 +148,7 @@ local function onCmd(favCmd)
             end)
             if proc then
                 cmdsRunning[cmdstr] = { show = action, kill = function() proc:kill() end }
-                if favCmd.pipeBufText then proc:write(util.bufSelText(true)) end
+                if favCmd.stdin then proc:write(util.bufSelText(true)) end
                 proc:close()
             end
         end
@@ -158,7 +158,7 @@ end
 local function onSh(favCmd)
     return function()
         local cmdstr = fillInCmd(favCmd.sh)
-        if favCmd.pipeBufText then
+        if favCmd.stdin then
             if buffer.filename and buffer.selection_empty and not buffer.modify then
                 cmdstr = "cat '" .. buffer.filename .. "' | " .. cmdstr
             else
