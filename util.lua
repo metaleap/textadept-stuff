@@ -11,7 +11,6 @@ local envHomeSlash = util.envHome .. '/'
 function util.fsPathJoin(...)
     local parts = {...}
     local path = ''
-    ui.statusbar_text = tostring(#parts)
     for i, part in ipairs(parts) do
         if part then
             while i > 1 and part:sub(1, 1) == '/' do
@@ -91,9 +90,9 @@ end
 
 
 -- because get_sel_text concats all multiple selections, here's one that won't:
-function util.bufSelText(fullTextIfNoSelection)
+function util.bufSelText(fullTextIfNoSelection, orElse)
     if buffer.selection_empty then
-        return fullTextIfNoSelection and buffer:get_text() or ''
+        return fullTextIfNoSelection and buffer:get_text() or orElse or ''
     end
     return buffer:text_range(buffer.selection_start, buffer.selection_end)
 end

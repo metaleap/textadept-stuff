@@ -426,19 +426,29 @@ end
 
 local function setupBuftabSwitcher()
     keys[ux.keysSwitchBuf] = function()
-        local elems = {}
+        local b, query = ui.dialogs.inputbox { title = 'Optionally pre-filter by:', width = 1234,
+                                                text = util.bufSelText(false, ui.find.find_entry_text) }
+        if b ~= 1 then return end
+        if query ~= '' then ui.find.find_entry_text = query end
+        local elems, bufs = {}, {}
 
-        for i, buf in ipairs(_BUFFERS) do
-            elems[1 + #elems] = buf.tab_label
-            elems[1 + #elems] = buf.filename or ''
-            elems[1 + #elems] = buf.tab_label .. '\n' .. (buf.filename or '')
+        for i = #_BUFFERS, 1, -1 do
+            local buf = _BUFFERS[i]
+            local pos = buf:get_text():find(query)
+            if query == '' or pos then
+                elems[1 + #elems] = buf.tab_label
+                elems[1 + #elems] = buf.filename or ''
+                bufs[1 + #bufs] = { buf, pos }
+            end
         end
 
-        local btn, item = ui.dialogs.filteredlist { title = 'WUT', items = elems,
-                                                    columns = { 'Name', 'Full Path', 'Words' },
-                                                    search_column = 3, width = 2345, height = 1234 }
+        local btn, item = ui.dialogs.filteredlist { title = query, items = elems,
+                                                    columns = { 'Name', 'Full Path' },
+                                                    search_column = 2, width = 2345, height = 1234 }
         if btn == 1 then
-            ui.print(item)
+            view:goto_buffer(bufs[item][1])
+            local pos = bufs[item][2]
+            if query ~= '' and pos then buffer:goto_pos(pos - 1) end
         end
     end
 end
