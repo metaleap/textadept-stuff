@@ -8,6 +8,11 @@ util.resetBag = {}
 local envHomeSlash = util.envHome .. '/'
 
 
+events.connect(events.BUFFER_NEW, function()
+    buffer.bufid = buffer.bufid or tostring(math.random() * os.clock() * os.time())
+end)
+
+
 function util.fsPathJoin(...)
     local parts = {...}
     local path = ''

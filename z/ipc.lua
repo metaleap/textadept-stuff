@@ -1,12 +1,10 @@
-local ipc = {}
+local zipc = { onMsg = function(msg) end }
 
 local util = require 'metaleap_zentient.util'
-
+local json = require 'metaleap_zentient.vendor.dkjson'
 
 
 local procsByLang, resetting = {}, false
-local menuPosMain, menuPosIntel, menuPosQuery
-local menuMain, menuIntel, menuQuery
 
 
 local function onProcStderr(lang, progName)
@@ -18,10 +16,12 @@ end
 
 local function onProcStdout(lang, progName)
     return function(ln)
-        local silent = ui.silent_print
-        ui.silent_print = true
-        ui._print('Z', ln)
-        ui.silent_print = silent
+        local obj, pos, err = json.decode(ln, 1, nil)
+        if err then
+            ui.print(err)
+        else
+            zipc.onMsg(obj)
+        end
     end
 end
 
@@ -35,7 +35,7 @@ local function onProcFailOrExit(lang, progName)
 end
 
 
-function ipc.init(langProgs)
+function zipc.init(langProgs)
     for lang, progname in pairs(langProgs) do
         local proc = util.osSpawnProc(progname,
                                         '\n', onProcStdout(lang, progname),
@@ -43,12 +43,6 @@ function ipc.init(langProgs)
                                         onProcFailOrExit(lang, progname), true)
         if proc then procsByLang[lang] = proc end
     end
-
-    menuPosMain, menuPosIntel, menuPosQuery = 1 + #textadept.menu.menubar, 2 + #textadept.menu.menubar, 3 + #textadept.menu.menubar
-    menuMain, menuIntel, menuQuery = { title = '  ' }, { title = '' }, { title = '' }
-    textadept.menu.menubar[menuPosMain] = menuMain
-    textadept.menu.menubar[menuPosIntel] = menuIntel
-    textadept.menu.menubar[menuPosQuery] = menuQuery
 
     events.connect(events.RESET_BEFORE, function()
         resetting = true
@@ -60,4 +54,4 @@ end
 
 
 
-return ipc
+return zipc

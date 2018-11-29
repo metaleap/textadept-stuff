@@ -28,8 +28,6 @@ _M.metaleap_zentient.favCmds = {
         { cmd = 'echo "Foo: §(foo) Name:§(_fileName) Bar:§(bar) Dir:§(_fileDir) Baz:§(baz) Full:§(_filePath) Full:§(foo)§(bar)§(baz)"' },
         { sh = 'git add -A && git commit -m "§(commitMsg)" && git push' },
 }   -- etc..
-
-    _M.metaleap_zentient.init()
 ```
 
 but tweaked to _your_ needs of course.
