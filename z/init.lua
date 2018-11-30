@@ -1,6 +1,6 @@
 local zentient = {}
 
-local json = require 'metaleap_zentient.vendor.dkjson'
+local util = require 'metaleap_zentient.util'
 local zipc = require 'metaleap_zentient.z.ipc'
 local zmenus = require 'metaleap_zentient.z.menus'
 local zcaddies = require 'metaleap_zentient.z.caddies'
@@ -10,17 +10,19 @@ local zcaddies = require 'metaleap_zentient.z.caddies'
 local handlers = {}
 
 
---local function onUnhandledMsg(msg)
-    --local silent = ui.silent_print
-    --ui.silent_print = true
-    --ui._print('Z', json.encode(msg))
-    --ui.silent_print = silent
---end
+local function onUnhandledMsg(msg)
+    local silent = ui.silent_print
+    ui.silent_print = true
+    ui._print('Z', util.jsonEncode(msg))
+    ui.silent_print = silent
+end
 
 
 local function onAnnounce(msg)
     if msg.caddy then
         zcaddies.on(msg.caddy)
+    else
+        onUnhandledMsg(msg)
     end
 end
 

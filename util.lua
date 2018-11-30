@@ -1,10 +1,14 @@
 local util = {}
 
+local json = require 'metaleap_zentient.vendor.dkjson'
+
 
 
 util.envHome = os.getenv("HOME")
 util.eventBufSwitch = 'metaleap_zentient.EVENT_BUFSWITCH'
 util.resetBag = {}
+util.jsonDecode = json.decode
+util.jsonEncode = json.encode
 local envHomeSlash = util.envHome .. '/'
 
 

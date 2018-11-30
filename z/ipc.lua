@@ -1,7 +1,6 @@
 local zipc = { onMsg = function(msg) end }
 
 local util = require 'metaleap_zentient.util'
-local json = require 'metaleap_zentient.vendor.dkjson'
 
 
 local procsByLang, resetting = {}, false
@@ -16,7 +15,7 @@ end
 
 local function onProcStdout(lang, progName)
     return function(ln)
-        local obj, pos, err = json.decode(ln, 1, nil)
+        local obj, pos, err = util.jsonDecode(ln, 1, nil)
         if err then
             ui.print(err)
         else
