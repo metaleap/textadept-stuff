@@ -11,12 +11,31 @@ local caddyMenus = {}
 
 
 function zcaddies.on(caddyMsg)
-    local menuid = caddyMsg.LangID .. '__' .. caddyMsg.ID
-    local menu = caddyMenus(menuid)
-    if not menu then
-        menu = { menu = { title = caddyMsg.Icon }, pos = 1 + #textadept.menu.menubar }
+    local menuupd, menuid = false, caddyMsg.LangID .. '__' .. caddyMsg.ID
+    local cm = caddyMenus[menuid]
+    if not cm then
+        cm = { menu = { title = caddyMsg.Icon }, pos = 1 + #textadept.menu.menubar }
+        caddyMenus[menuid] = cm
+        menuupd = true
     end
-    if caddyMsg.Status and caddyMsg.Status.Flag ~= CaddyStatus_GOOD then
+    if caddyMsg.Status then
+        local nutitle = cm.menu.title
+        if caddyMsg.Status.Flag == CaddyStatus_PENDING then
+            nutitle = ''
+        elseif caddyMsg.Status.Flag == CaddyStatus_ERROR then
+            nutitle = ''
+        elseif caddyMsg.Status.Flag == CaddyStatus_BUSY then
+            nutitle = ''
+        elseif caddyMsg.Status.Flag == CaddyStatus_GOOD then
+            nutitle = caddyMsg.Icon
+        end
+        if nutitle ~= cm.menu.title then
+            cm.menu.title = nutitle
+            menuupd = true
+        end
+    end
+    if menuupd then
+        textadept.menu.menubar[cm.pos] = cm.menu
     end
 end
 
