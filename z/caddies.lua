@@ -2,6 +2,8 @@ local zcaddies = {}
 
 local util = require 'metaleap_zentient.util'
 
+
+
 local CaddyStatus_PENDING = 0
 local CaddyStatus_ERROR = 1
 local CaddyStatus_BUSY = 2
@@ -14,7 +16,8 @@ function zcaddies.on(caddyMsg)
     local menuupd, menuid = false, caddyMsg.LangID .. '__' .. caddyMsg.ID
     local cm = caddyMenus[menuid]
     if not cm then
-        cm = { menu = { title = caddyMsg.Icon }, pos = 1 + #textadept.menu.menubar }
+        cm = { menu = { title = '?' }, pos = 1 + #textadept.menu.menubar }
+        util.uxMenuAddBackItem(cm.menu, false, nil)
         caddyMenus[menuid] = cm
         menuupd = true
     end

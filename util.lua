@@ -171,6 +171,15 @@ function util.uxStrNowTime(pref, suff)
 end
 
 
+function util.uxMenuAddBackItem(menu, sep, on)
+    if not on then
+        on = function() end
+    end
+    if sep then menu[1 + #menu] = { '' } end
+    menu[1 + #menu] = { '', function() end }
+end
+
+
 function util.arrFind(arr, chk)
     for _, val in ipairs(arr) do
         if chk(val) then return val end
@@ -226,6 +235,12 @@ function util.strTrimLeft(s) -- , dbg)
         end
     end
     return (pos == 0) and '' or ((pos == 1) and s or s:sub(pos))
+end
+
+
+function util.objIsEmpty(obj)
+    for _ in pairs(obj) do return false end
+    return true
 end
 
 

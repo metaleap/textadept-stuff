@@ -4,7 +4,7 @@ local util = require 'metaleap_zentient.util'
 
 
 
-local strIcon = '  ' -- ''
+local strIcon = '      ' -- ''
 local menu, menuPos, timeLastEmit, groups
 local menuBuild, menuClear -- predeclare the 2 local funcs that rely on each other
 
@@ -62,7 +62,7 @@ menuBuild = function(title, dropGroupIdx)
         menu[1 + #menu] = { '' }
         menu[1 + #menu] = { '', menuClear }
     end
-    menu[1 + #menu] = { '', menuTitleClear }
+    util.uxMenuAddBackItem(menu, false, menuTitleClear)
     menuApply()
 end
 

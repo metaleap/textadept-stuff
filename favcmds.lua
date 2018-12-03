@@ -192,8 +192,7 @@ function favcmds.init(favCmds)
                 menu[1 + #menu] = { util.uxStrMenuable(fc.cmd), onCmd(fc) }
             end
         end
-        menu[1 + #menu] = { '' }
-        menu[1 + #menu] = { '', function() end }
+        util.uxMenuAddBackItem(menu, true, nil)
         textadept.menu.menubar[menuPos] = menu
     end
 end

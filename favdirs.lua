@@ -90,8 +90,7 @@ function favdirs.init(favDirs)
             freshmenu()
         end }
 
-        menu[1 + #menu] = { '' }
-        menu[1 + #menu] = { '', freshmenu }
+        util.uxMenuAddBackItem(menu, true, freshmenu)
         textadept.menu.menubar[menuPos] = menu
     end
 
