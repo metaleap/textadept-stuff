@@ -13,11 +13,13 @@ local caddyMenus = {}
 
 
 function zcaddies.on(caddyMsg)
+    print(util.jsonEncode(caddyMsg))
     local menuupd, menuid = false, caddyMsg.LangID .. '__' .. caddyMsg.ID
     local cm = caddyMenus[menuid]
     if not cm then
         cm = { menu = { title = '?' }, pos = 1 + #textadept.menu.menubar }
-        util.uxMenuAddBackItem(cm.menu, false, nil)
+        cm.menu[1] = { caddyMsg.Title .. ((caddyMsg.Status and caddyMsg.Status.Desc) and ('\n'..caddyMsg.Status.Desc) or ''), function() end }
+        util.uxMenuAddBackItem(cm.menu, true, nil)
         caddyMenus[menuid] = cm
         menuupd = true
     end
