@@ -18,11 +18,12 @@ function zcaddies.on(caddyMsg)
     local cm = caddyMenus[menuid]
     if not cm then
         cm = { menu = { title = '?' }, pos = 1 + #textadept.menu.menubar }
-        cm.menu[1] = { caddyMsg.Title .. ((caddyMsg.Status and caddyMsg.Status.Desc) and ('\n'..caddyMsg.Status.Desc) or ''), function() end }
+        cm.menu[1] = { '?', function() end }
         util.uxMenuAddBackItem(cm.menu, true, nil)
         caddyMenus[menuid] = cm
         menuupd = true
     end
+    cm.menu[1] = { caddyMsg.Title .. ((caddyMsg.Status and caddyMsg.Status.Desc) and (':\n\t'..caddyMsg.Status.Desc) or ''), function() end }
     if caddyMsg.Status then
         local nutitle = cm.menu.title
         if caddyMsg.Status.Flag == CaddyStatus_PENDING then
