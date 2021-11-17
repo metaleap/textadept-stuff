@@ -62,7 +62,7 @@ events.connect(events.INITIALIZED, function()
         if buffer.filename and string.len(buffer.filename) > 0 then
             return
         end
-        buffer.zoom = -5
+        buffer.zoom = -4
         if buffer:get_lexer() ~= "dbgbuf" then
             buffer:set_lexer("dbgbuf")
         end
