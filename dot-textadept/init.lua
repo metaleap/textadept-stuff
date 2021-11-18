@@ -61,9 +61,6 @@ events.connect(events.INITIALIZED, function()
         if buffer.filename and string.len(buffer.filename) > 0 then
             return
         end
-        if okStr(buffer.tab_label) then
-            ui.dialogs.msgbox({text=buffer.tab_label})
-        end
         buffer.zoom = -3
         if buffer:get_lexer() ~= "dbgbuf" then
             buffer:set_lexer("dbgbuf")
