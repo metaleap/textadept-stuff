@@ -72,6 +72,7 @@ end end
 
 function Server.onStdout(me) return function(data)
     Server.onIncomingData(me, data)
+    Server.processInbox(me)
 end end
 
 function Server.sendMsg(me, msg, addreqid)
@@ -143,6 +144,32 @@ function Server.onIncomingData(me, data)
             ui.dialogs.msgbox({text = 'Bad JSON, check LSP log'})
         end
     end
+end
+
+function Server.processInbox(me, waitreqid)
+    local keeps = {}
+    while #me._inbox > 0 do
+        local msg = table.remove(me._inbox, 1)
+        if msg.id and msg.method then
+            Server.onIncomingRequest(me, msg)
+        elseif msg.method then
+            Server.onIncomingNotification(me, msg)
+        elseif msg.id then
+            if msg.id == waitreqid then
+                return msg
+            end
+            keeps[#keeps] = msg
+        end
+    end
+    me._inbox = keeps
+end
+
+function Server.onIncomingNotification(me, msg)
+    Server.log(me, "NOTIF: " .. msg.method)
+end
+
+function Server.onIncomingRequest(me, msg)
+    Server.log(me, "INREQ: " .. msg.method)
 end
 
 
