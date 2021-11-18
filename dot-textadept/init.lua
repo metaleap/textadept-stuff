@@ -109,7 +109,7 @@ end
 
 
 
--- status bar: show stats of selection if any. if nothing else shown, show full file path. highlight selection occurrences
+-- status bar: show stats of selection if any. if nothing else shown, show full file path
 events.connect(events.UPDATE_UI, function(upd)
     if (not okStr(ui.statusbar_text)) and buffer and okStr(buffer.filename) and (not ui.find.active) then
         ui.statusbar_text = buffer.filename
