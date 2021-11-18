@@ -1,20 +1,13 @@
 local json = require('ta_lsp.dkjson')
 
-local Server = {
-}
-
-function method(me, fn)
-    return function(...) fn(me, ...) end
-end
+local Server = {}
 
 function Server.new(lang, desc)
-    local me = { lang = lang }
-
-    onstdout = function(output) Server.log(me, output) end
-    onstderr = function(output) Server.log(me, output) end
-    onexit = function(exitcode) Server.log(me, "exited: "..exitcode) end
-    me.proc = assert(os.spawn(desc.cmd, desc.cwd, desc.env, onstdout, onstderr, onexit))
+    local me = {lang = lang}
+    me.proc = assert(os.spawn(desc.cmd, "/home/_", nil,
+                                Server.onStdout(me), Server.onStderr(me), Server.onExit(me)))
     Server.log(me, me.proc:status())
+    Server.chk(me)
     return me
 end
 
@@ -23,5 +16,52 @@ function Server.log(me, msg)
     ui._print('[LSP]', '['..me.lang..']\t'..msg)
     ui.goto_view(cur_view)
 end
+
+function Server.chk(me)
+    if me.proc and me.proc:status() == 'terminated' then
+        Server.die(me)
+    end
+end
+
+function Server.die(me, msg)
+    if me.proc then
+        me.proc:close()
+        me.proc:kill()
+        me.proc = nil
+    end
+end
+
+function Server.sendRaw(me, data)
+    Server.chk(me)
+    if me.proc then
+        local ok, err = me.proc:write(data)
+        if (not ok) and err and string.len(err) > 0 then
+            Server.die(me)
+            Server.log(me, msg)
+        end
+    end
+end
+
+local incoming = ""
+function Server.onIncomingRaw(me, data)
+    Server.log(me, data)
+    incoming = incoming .. data
+    incoming = ""
+end
+
+function Server.onStdout(me) return function(data)
+    Server.onIncomingRaw(me, data)
+end end
+
+function Server.onStderr(me) return function(data)
+    Server.log(me, data)
+end end
+
+function Server.onExit(me) return function(exitcode)
+    Server.log(me, "exited: "..exitcode)
+    me.proc = nil
+end end
+
+
 
 return Server
