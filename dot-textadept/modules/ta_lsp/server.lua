@@ -10,9 +10,9 @@ end
 function Server.new(lang, desc)
     local me = { lang = lang }
 
-    onstdout = function()  end
-    onstderr = function()  end
-    onexit = function()  end
+    onstdout = function(output) Server.log(me, output) end
+    onstderr = function(output) Server.log(me, output) end
+    onexit = function(exitcode) Server.log(me, "exited: "..exitcode) end
     me.proc = assert(os.spawn(desc.cmd, desc.cwd, desc.env, onstdout, onstderr, onexit))
     Server.log(me, me.proc:status())
     return me
