@@ -4,7 +4,7 @@ local Server = {}
 
 function Server.new(lang, desc)
     local me = {lang = lang}
-    me.proc = assert(os.spawn(desc.cmd, "/home/_", nil,
+    me.proc = assert(os.spawn(desc.cmd, desc.cwd or lfs.currentdir(), desc.env,
                                 Server.onStdout(me), Server.onStderr(me), Server.onExit(me)))
     Server.log(me, me.proc:status())
     Server.chk(me)
@@ -19,7 +19,7 @@ end
 
 function Server.chk(me)
     if me.proc and me.proc:status() == 'terminated' then
-        Server.die(me)
+        me.proc = nil
     end
 end
 
