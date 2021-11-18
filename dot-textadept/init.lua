@@ -3,7 +3,7 @@
 --lua: /home/_/.textadept/modules/lsp/init.lua:413: calling 'write' on bad self (process terminated)
 
 local msgbufs = 3
-local fontsize = 16
+local fontsize = 17
 
 require('file_diff')
 local lsp = require('lsp')

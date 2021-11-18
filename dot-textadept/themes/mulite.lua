@@ -5,8 +5,8 @@
 local view, colors, styles = view, lexer.colors, lexer.styles
 
 -- Greyscale colors.
-colors.dark_black = 0x000000
-colors.black = 0x585B5F -- #5F5B58
+colors.dark_black = 0x282B2F
+colors.black = 0x484B4F -- #5F5B58
 colors.light_black = 0x686B6F -- #6F6B68
 colors.grey_black = 0x616468 -- #686461
 colors.dark_grey = 0x787B7F -- #7F7B78
@@ -14,7 +14,7 @@ colors.grey = 0x888B8F -- #8F8B88
 colors.light_grey = 0x989B9F -- #9F9B98
 colors.grey_white = 0xB7B8BF -- #BFB8B7
 colors.dark_white = 0xC7C8CF -- #CFC8C7
-colors.white = 0xDCDCDC
+colors.white = 0xD8C8E4
 colors.light_white = 0xFFFFFF
 
 -- Dark colors.
@@ -96,7 +96,7 @@ view.element_color[view.ELEMENT_SELECTION_SECONDARY_BACK] = colors.grey_white
 view.element_color[view.ELEMENT_SELECTION_INACTIVE_BACK] = colors.dark_white
 view.element_color[view.ELEMENT_CARET] = colors.grey_black
 -- view.element_color[view.ELEMENT_CARET_ADDITIONAL] =
-view.element_color[view.ELEMENT_CARET_LINE_BACK] = 0xD2D2D2
+view.element_color[view.ELEMENT_CARET_LINE_BACK] = 0xCCBCD8
 
 -- Fold Margin.
 view:set_fold_margin_color(true, bgcol)
