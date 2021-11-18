@@ -238,8 +238,9 @@ end
 -- lang-specific stuff
 textadept.file_types.extensions.dummy = 'dbgbuf'
 events.connect(events.INITIALIZED, function()
-    lsp.server_commands.go = 'pipethru'
-    lsp.server_commands.dummy = 'dummylangserver'
+    lsp.servers.dummy = {cmd = 'dummylangserver', init_options = nil}
+
+    lsp.ensureRunning('dummy')
 end)
 local onBuildOrRun = function(str)
     clearDbgBufs()
@@ -379,7 +380,7 @@ keys['f1'] = function(pos)
     textadept.editing.show_documentation(pos)
     --lsp.hover(pos)
 end
-keys['alt+.'] = function()
+keys['ctrl+,'] = function()
     ui.goto_view(1)
 end
 --keys['shift+f12'] = function()
