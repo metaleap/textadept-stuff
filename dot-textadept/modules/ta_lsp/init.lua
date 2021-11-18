@@ -2,7 +2,8 @@ local server = require('ta_lsp.server')
 
 local M = {
     log_rpc = false,
-    servers = {
+    servers = { -- eg:
+        --go = {cmd = 'gopls'}
     }
 }
 
