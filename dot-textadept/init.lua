@@ -118,6 +118,7 @@ events.connect(events.UPDATE_UI, function(upd)
     if ((upd & buffer.UPDATE_SELECTION) == buffer.UPDATE_SELECTION) then
         buffer.indicator_current = textadept.editing.INDIC_HIGHLIGHT
         buffer:indicator_clear_range(1, buffer.length)
+        buffer:indicator_clear_range(1, buffer.length)
 
         local charcount = buffer:count_characters(buffer.selection_start, buffer.selection_end)
         local linecount = buffer:line_from_position(buffer.selection_end) - buffer:line_from_position(buffer.selection_start) + 1

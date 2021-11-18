@@ -50,6 +50,8 @@ colors.light_orange = 0x80B8F0 -- '#F0B880'
 colors.light_pink = colors.light_purple
 colors.light_lavender = colors.light_purple
 
+if false then end
+
 -- Default font.
 if not font then
   font = WIN32 and 'Courier New' or OSX and 'Monaco' or 'Bitstream Vera Sans Mono'
@@ -66,14 +68,13 @@ styles.call_tip = {fore = colors.light_black, back = colors.dark_white}
 styles.fold_display_text = {fore = colors.grey}
 
 -- Token styles.
-styles.class = {fore = colors.yellow}
 styles.comment = {fore = colors.light_grey, italics = true}
 styles.constant = {fore = colors.red}
 styles.embedded = {fore = colors.dark_blue, back = colors.dark_white}
 styles.error = {fore = colors.red, italics = true}
 styles['function'] = {fore = colors.dark_orange}
 styles.identifier = {  }
-styles.keyword = {fore = colors.dark_blue, underlined = true}
+styles.keyword = {fore = colors.dark_grey, italics = true, underlined = true}
 styles.label = {fore = colors.dark_orange}
 styles.number = {fore = colors.dark_purple, bold = true}
 styles.operator = {fore = colors.dark_green}
@@ -117,7 +118,8 @@ end
 -- Indicators.
 view.indic_fore[ui.find.INDIC_FIND] = colors.yellow
 view.indic_alpha[ui.find.INDIC_FIND] = 128
-view.indic_fore[textadept.editing.INDIC_BRACEMATCH] = colors.grey
+view.indic_fore[textadept.editing.INDIC_BRACEMATCH] = colors.dark_black
+view.indic_stroke_width[textadept.editing.INDIC_BRACEMATCH] = 1000
 view.indic_fore[textadept.editing.INDIC_HIGHLIGHT] = colors.orange
 view.indic_alpha[textadept.editing.INDIC_HIGHLIGHT] = 128
 view.indic_fore[textadept.snippets.INDIC_PLACEHOLDER] = colors.grey_black
