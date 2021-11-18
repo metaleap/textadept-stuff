@@ -642,7 +642,7 @@ end
 -- Jumps to the given LSP Location structure.
 -- @param location LSP Location to jump to.
 local function goto_location(location)
-  ui.goto_file(tofilename(location.uri))
+  ui.goto_file(tofilename(location.uri), false, 1)
   buffer:set_sel(tobufferrange(location.range))
 end
 

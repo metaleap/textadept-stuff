@@ -5,7 +5,7 @@ local token, word_match = lexer.token, lexer.word_match
 local P, S = lpeg.P, lpeg.S
 
 local lex = lexer.new('dbgbuf')
-local style = lexer.styles.default .. { italic = true, back = 0xB8B8B8 }
+local style = lexer.styles.default .. { italic = true, back = 0x686868 }
 
 lex:add_rule('myany1', token(lexer.DEFAULT, lexer.any^1))
 lex:add_style(lexer.DEFAULT, style)

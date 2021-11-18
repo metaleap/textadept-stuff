@@ -8,6 +8,7 @@ local fontsize = 16
 require('file_diff')
 local lsp = require('lsp')
 
+textadept.run.run_in_background = true
 textadept.editing.auto_pairs = nil -- own impl, see `encloseOrPrepend()` below
 textadept.editing.highlight_words = textadept.editing.HIGHLIGHT_NONE
 textadept.editing.comment_string.ansi_c = '//'
@@ -59,10 +60,13 @@ events.connect(events.INITIALIZED, function()
 
     -- auto-output buffers -- event must be connected after INITIALIZED
     local ensuredbgbufstyles = function()
+        if okStr(buffer.tab_label) then
+            ui.dialogs.msgbox({text=buffer.tab_label})
+        end
         if buffer.filename and string.len(buffer.filename) > 0 then
             return
         end
-        buffer.zoom = -4
+        buffer.zoom = -3
         if buffer:get_lexer() ~= "dbgbuf" then
             buffer:set_lexer("dbgbuf")
         end
@@ -105,7 +109,7 @@ end
 
 
 
--- status bar: show char count of selection if any. if nothing else shown, show full file path
+-- status bar: show stats of selection if any. if nothing else shown, show full file path. highlight selection occurrences
 events.connect(events.UPDATE_UI, function(upd)
     if (not okStr(ui.statusbar_text)) and buffer and okStr(buffer.filename) and (not ui.find.active) then
         ui.statusbar_text = buffer.filename
@@ -130,6 +134,7 @@ events.connect(events.UPDATE_UI, function(upd)
         end
     end
 end)
+
 
 
 
@@ -364,7 +369,9 @@ keys['f12'] = function()
     textadept.history.record()
     if not lsp.goto_definition() then
         if not lsp.goto_implementation() then
-            lsp.goto_type_definition()
+            if not lsp.goto_type_definition() then
+                lsp.goto_declaration()
+            end
         end
     end
 end
