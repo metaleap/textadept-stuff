@@ -58,7 +58,7 @@ if not size then size = not OSX and 10 or 12 end
 if not bgcol then bgcol = colors.white end
 
 -- Predefined styles.
-styles.default = {font = font, size = size, fore = colors.light_black, back = bgcol}
+styles.default = {font = font, size = size, fore = colors.black, back = bgcol}
 styles.line_number = {fore = colors.light_grey, back = bgcol}
 -- styles.control_char = {}
 styles.indent_guide = {fore = colors.dark_white}

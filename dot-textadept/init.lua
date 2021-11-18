@@ -110,12 +110,12 @@ end
 
 
 -- status bar: show stats of selection. if nothing else, show full file path.
+-- (also highlight all current-selection occurrences since we're gathering them anyway)
 events.connect(events.UPDATE_UI, function(upd)
     if (not okStr(ui.statusbar_text)) and buffer and okStr(buffer.filename) and (not ui.find.active) then
         ui.statusbar_text = buffer.filename
     end
-    local issel = ((upd & buffer.UPDATE_SELECTION) == buffer.UPDATE_SELECTION)
-    if issel then
+    if ((upd & buffer.UPDATE_SELECTION) == buffer.UPDATE_SELECTION) then
         buffer.indicator_current = textadept.editing.INDIC_HIGHLIGHT
         buffer:indicator_clear_range(1, buffer.length)
 
@@ -237,13 +237,17 @@ lsp.show_all_diagnostics = true
 events.connect(events.INITIALIZED, function()
     lsp.server_commands.go = 'pipethru'
 end)
-textadept.run.compile_commands.go = function()
+local onBuildOrRun = function(str)
     clearDbgBufs()
-    return 'go install'
+    ui.print("")
+    ui.goto_view(1)
+    return str
+end
+textadept.run.compile_commands.go = function()
+    return onBuildOrRun('go install')
 end
 textadept.run.run_commands.go = function()
-    clearDbgBufs()
-    return 'bash -c "go run *.go"'
+    return onBuildOrRun('bash -c "go run *.go"')
 end
 events.connect(events.FILE_BEFORE_SAVE, function(filename)
     if buffer:get_lexer() ~= 'go' then
