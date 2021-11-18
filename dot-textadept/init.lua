@@ -1,9 +1,10 @@
 
 local msgbufs = 3
 local fontsize = 17
+local screenwidth = 3840
 
 require('file_diff')
-local lsp = require('lsp')
+local lsp = require('ta_lsp')
 
 textadept.run.run_in_background = true
 textadept.editing.auto_pairs = nil -- own impl, see `encloseOrPrepend()` below
@@ -69,6 +70,16 @@ events.connect(events.INITIALIZED, function()
     events.connect(events.BUFFER_AFTER_SWITCH, ensuredbgbufstyles)
     events.connect(events.VIEW_AFTER_SWITCH, ensuredbgbufstyles)
 end)
+
+
+
+--local set_title = function()
+--    buffer.tab_label = "Foo Bar"
+--end
+--events.connect(events.SAVE_POINT_REACHED, set_title)
+--events.connect(events.SAVE_POINT_LEFT, set_title)
+--events.connect(events.BUFFER_AFTER_SWITCH, set_title)
+--events.connect(events.VIEW_AFTER_SWITCH, set_title)
 
 
 
@@ -202,7 +213,7 @@ events.connect(events.BUFFER_DELETED, refreshOpenFileNames)
 -- for alt+1 ... alt+9 to move to buffer/tab at the specified position index
 local gotoBuffer = function(nr)
     local numbufs = #_BUFFERS - msgbufs
-    if numbufs <= 0 then return end
+    if numbufs <= 1 then return end
     local curnr = _BUFFERS[buffer] - msgbufs
     if nr == -1 then
         nr = curnr - 1
@@ -222,12 +233,6 @@ local gotoBuffer = function(nr)
     view:goto_buffer(_BUFFERS[nr])
 end
 
-
-
-
-lsp.log_rpc = true
-lsp.show_diagnostics = true
-lsp.show_all_diagnostics = true
 
 
 -- lang-specific stuff
@@ -253,7 +258,7 @@ events.connect(events.FILE_BEFORE_SAVE, function(filename)
         return
     end
     local gopath = os.getenv("GOPATH")
-    local tabs2spaces = okStr(filename) and okStr(gopath) and (string.len(filename) > string.len(gopath)) and (string.sub(filename, 1, string.len(gopath)) == gopath)
+    local tabs2spaces = false -- okStr(filename) and okStr(gopath) and (string.len(filename) > string.len(gopath)) and (string.sub(filename, 1, string.len(gopath)) == gopath)
     local cmd = "gofmt"
     if tabs2spaces then
         cmd = cmd .. " | expand -i -t 4"
@@ -315,10 +320,12 @@ keys['alt+8'] = function() gotoBuffer(8) end
 keys['alt+9'] = function() gotoBuffer(9) end
 keys['alt+0'] = function() gotoBuffer(#_BUFFERS) end
 keys['ctrl+\t'] = function()
-    if lastbuf and _BUFFERS[lastbuf] then
+    local numbufs = #_BUFFERS - msgbufs
+    if numbufs <= 1 then return end
+    if lastbuf and _BUFFERS[lastbuf] and lastbuf ~= buffer then
         view:goto_buffer(lastbuf)
     else
-        ui.switch_buffer(true)
+        gotoBuffer((_BUFFERS[buffer] == #_BUFFERS) and -1 or 0)
     end
 end
 keys['ctrl+shift+\t'] = function()
@@ -341,6 +348,10 @@ keys['alt+right'] = textadept.history.forward
 keys['ctrl++'] = view.zoom_in
 keys['ctrl+U'] = buffer.upper_case
 keys['ctrl+L'] = buffer.lower_case
+keys['ctrl+m'] = function()
+    local fifth = screenwidth / 5
+    view.size = (view.size <= fifth) and (fifth * 4) or fifth
+end
 keys['ctrl+g'] = function()
     textadept.history.record()
     textadept.editing.goto_line()
@@ -357,34 +368,34 @@ keys['ctrl+b'] = textadept.run.compile
 keys['f5'] = textadept.run.run
 keys['ctrl+R'] = buffer.reload
 keys['ctrl+r'] = reset
-keys['ctrl+O'] = lsp.goto_symbol
-keys['ctrl+t'] = function()
-    local btn, query = ui.dialogs.inputbox({title = 'LSP Query:',  text = '' })
-    if okStr(query) and (btn == 1) then
-        lsp.goto_symbol(query)
-    end
-end
+--keys['ctrl+O'] = lsp.goto_symbol
+--keys['ctrl+t'] = function()
+--    local btn, query = ui.dialogs.inputbox({title = 'LSP Query:',  text = '' })
+--    if okStr(query) and (btn == 1) then
+--        lsp.goto_symbol(query)
+--    end
+--end
 keys['f1'] = function(pos)
     textadept.editing.show_documentation(pos)
-    lsp.hover(pos)
+    --lsp.hover(pos)
 end
-keys['alt+v'] = function()
+keys['alt+.'] = function()
     ui.goto_view(1)
 end
-keys['shift+f12'] = function()
-    clearDbgBufs()
-    lsp.find_references()
-end
-keys['f12'] = function()
-    textadept.history.record()
-    if not lsp.goto_definition() then
-        if not lsp.goto_implementation() then
-            if not lsp.goto_type_definition() then
-                lsp.goto_declaration()
-            end
-        end
-    end
-end
+--keys['shift+f12'] = function()
+--    clearDbgBufs()
+--    lsp.find_references()
+--end
+--keys['f12'] = function()
+--    textadept.history.record()
+--    if not lsp.goto_definition() then
+--        if not lsp.goto_implementation() then
+--            if not lsp.goto_type_definition() then
+--                lsp.goto_declaration()
+--            end
+--        end
+--    end
+--end
 keys['ctrl+f'] = function()
     ui.find.find_entry_text = buffer:get_sel_text()
     ui.find.focus({ incremental = true })
@@ -415,5 +426,5 @@ end
 
 keys['ctrl+ '] = function()
     local name = buffer:get_lexer()
-    textadept.editing.autocomplete((name == "go" or name == "dbgbuf") and "lsp" or (okStr(name) and name or "word"))
+    textadept.editing.autocomplete((name == "go" or name == "dbgbuf") and "ta_lsp" or (okStr(name) and name or "word"))
 end
