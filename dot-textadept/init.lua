@@ -109,12 +109,16 @@ end
 
 
 
--- status bar: show stats of selection if any. if nothing else shown, show full file path
+-- status bar: show stats of selection. if nothing else, show full file path.
 events.connect(events.UPDATE_UI, function(upd)
     if (not okStr(ui.statusbar_text)) and buffer and okStr(buffer.filename) and (not ui.find.active) then
         ui.statusbar_text = buffer.filename
     end
-    if ((upd & buffer.UPDATE_SELECTION) == buffer.UPDATE_SELECTION) then
+    local issel = ((upd & buffer.UPDATE_SELECTION) == buffer.UPDATE_SELECTION)
+    if issel then
+        buffer.indicator_current = textadept.editing.INDIC_HIGHLIGHT
+        buffer:indicator_clear_range(1, buffer.length)
+
         local charcount = buffer:count_characters(buffer.selection_start, buffer.selection_end)
         local linecount = buffer:line_from_position(buffer.selection_end) - buffer:line_from_position(buffer.selection_start) + 1
         if charcount > 2 or linecount > 2 then
@@ -123,6 +127,7 @@ events.connect(events.UPDATE_UI, function(upd)
             while (idx and idx > 0) or (idxl and idxl > 0) do
                 if (idx and idx > 0) then
                     occurs = occurs + 1
+                    buffer:indicator_fill_range(idx, string.len(seltxt))
                     idx = string.find(buftxt, seltxt, idx + 1, 'plain')
                 end
                 if (idxl and idxl > 0) then
@@ -130,7 +135,7 @@ events.connect(events.UPDATE_UI, function(upd)
                     idxl = string.find(buftxtl, seltxtl, idxl + 1, 'plain')
                 end
             end
-            ui.statusbar_text = charcount.." chars"..(linecount > 1 and (", "..linecount.." lines") or "")..", "..occurs.."× ("..occursl.."×)"
+            ui.statusbar_text = charcount.." chars"..(linecount > 1 and (", "..linecount.." lines") or "")..((occursl > 1) and (", "..occurs.."× ("..occursl.."×)") or "")
         end
     end
 end)
@@ -378,14 +383,6 @@ end
 keys['ctrl+f'] = function()
     ui.find.find_entry_text = buffer:get_sel_text()
     ui.find.focus()
-end
-keys['ctrl+h'] = function()
-    if textadept.editing.highlight_words == textadept.editing.HIGHLIGHT_NONE then
-        textadept.editing.highlight_words = textadept.editing.HIGHLIGHT_SELECTED
-    else
-        textadept.editing.highlight_words = textadept.editing.HIGHLIGHT_NONE
-        buffer:cancel()
-    end
 end
 keys['\b'] = function()
     local next = string.byte(buffer:get_text(), buffer.anchor) or 0
