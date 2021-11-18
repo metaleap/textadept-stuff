@@ -120,7 +120,7 @@ end
 events.connect(events.UPDATE_UI, function(upd)
     if (not okStr(ui.statusbar_text)) and buffer and okStr(buffer.filename) and (not ui.find.active) then
         local idx = _BUFFERS[buffer]
-        ui.statusbar_text = "#" .. (idx-msgbufs) .. "/"..(#_BUFFERS-msgbufs).." — " .. buffer.filename
+        ui.statusbar_text = buffer.filename
     end
     if ((upd & buffer.UPDATE_SELECTION) == buffer.UPDATE_SELECTION) then
         buffer.indicator_current = textadept.editing.INDIC_HIGHLIGHT

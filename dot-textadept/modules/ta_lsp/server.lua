@@ -3,7 +3,7 @@ local json = require('ta_lsp.dkjson')
 local Server = { log_rpc = true, allow_markdown_docs = true }
 
 function Server.new(lang, desc)
-    local me = {lang = lang, desc = desc, _reqid = 0}
+    local me = {lang = lang, desc = desc}
     Server.ensureProc(me)
     return me
 end
@@ -27,7 +27,7 @@ end
 function Server.ensureProc(me)
     local err
     if not Server.chk(me) then
-        me._reqid, me._initRecv = 0, false
+        me._reqid, me._initRecv, me._data, me._inbox = 0, false, "", {}
         me.proc, err = os.spawn(me.desc.cmd, me.desc.cwd or lfs.currentdir(),
                                 Server.onStdout(me), Server.onStderr(me), Server.onExit(me))
         if err then
@@ -36,7 +36,7 @@ function Server.ensureProc(me)
         end
         if me.proc then
             Server.log(me, me.proc:status())
-            Server.sendRequest(me, 'initialize', {
+            local reqid = Server.sendRequest(me, 'initialize', {
                 processId = json.null, rootUri = json.null,
                 initializationOptions = me.desc.init_options or json.null,
                 capabilities = {
@@ -47,6 +47,7 @@ function Server.ensureProc(me)
                     }
                 }
             })
+            --local resp = Server.getResponse()
         end
     end
     return Server.chk(me)
@@ -70,7 +71,7 @@ function Server.onStderr(me) return function(data)
 end end
 
 function Server.onStdout(me) return function(data)
-    Server.onIncomingRaw(me, data)
+    Server.onIncomingData(me, data)
 end end
 
 function Server.sendMsg(me, msg, addreqid)
@@ -106,10 +107,43 @@ function Server.sendRequest(me, method, params)
     return Server.sendMsg(me, {jsonrpc = '2.0', method = method, params = params}, true)
 end
 
-function Server.onIncomingRaw(me, data)
-    Server.log(me, data)
+function Server.onIncomingData(me, data)
+    me._data = me._data .. data
+    while true do
+        local pos = string.find(me._data, "Content-Length: ", idx, 'plain')
+        if not pos then
+            return
+        end
+        local numpos = pos + string.len("Content-Length: ")
+        local rnpos = string.find(me._data, "\r\n", numpos, 'plain')
+        if not rnpos then
+            return
+        end
+        local clen = tonumber(string.sub(me._data, numpos, rnpos))
+        if (not clen) or clen < 2 then
+            me._data = string.sub(me._data, rnpos)
+            return
+        end
+        local datapos = string.find(me._data, "\r\n\r\n", numpos, 'plain')
+        if not datapos then
+            return
+        end
+        datapos = datapos + string.len("\r\n\r\n")
+        local data = string.sub(me._data, datapos, datapos + clen)
+        if (not data) or string.len(data) < clen then
+            return
+        end
+        idx, me._data = 1, string.sub(me._data, datapos + clen)
+        local msg, errpos, errmsg = json.decode(data)
+        if msg then
+            me._inbox[#me._inbox] = msg
+        end
+        if errmsg and string.len(errmsg) > 0 then
+            Server.log(me, "UNJSON: '" .. errmsg .. "' at pos " .. errpos .. 'in: ' .. data)
+            ui.dialogs.msgbox({text = 'Bad JSON, check LSP log'})
+        end
+    end
 end
-
 
 
 
