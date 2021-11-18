@@ -14,7 +14,7 @@ colors.grey = 0x888B8F -- #8F8B88
 colors.light_grey = 0x989B9F -- #9F9B98
 colors.grey_white = 0xB7B8BF -- #BFB8B7
 colors.dark_white = 0xC7C8CF -- #CFC8C7
-colors.white = 0xD8C8E4
+colors.white = 0xECECEC
 colors.light_white = 0xFFFFFF
 
 -- Dark colors.
@@ -96,7 +96,7 @@ view.element_color[view.ELEMENT_SELECTION_SECONDARY_BACK] = colors.grey_white
 view.element_color[view.ELEMENT_SELECTION_INACTIVE_BACK] = colors.dark_white
 view.element_color[view.ELEMENT_CARET] = colors.grey_black
 -- view.element_color[view.ELEMENT_CARET_ADDITIONAL] =
-view.element_color[view.ELEMENT_CARET_LINE_BACK] = 0xCCBCD8
+view.element_color[view.ELEMENT_CARET_LINE_BACK] = 0xE0E0E0
 
 -- Fold Margin.
 view:set_fold_margin_color(true, bgcol)

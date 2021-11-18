@@ -1,6 +1,3 @@
---lua: /home/_/.textadept/modules/lsp/init.lua:392: attempt to index a nil value (local 'message')
---lua: /home/_/.textadept/modules/lsp/init.lua:413: calling 'write' on bad self (process terminated)
---lua: /home/_/.textadept/modules/lsp/init.lua:413: calling 'write' on bad self (process terminated)
 
 local msgbufs = 3
 local fontsize = 17
@@ -15,6 +12,7 @@ textadept.editing.comment_string.ansi_c = '//'
 textadept.editing.strip_trailing_spaces = true
 textadept.history.maximum_history_size = 1234
 ui.find.highlight_all_matches = true
+ui.find.incremental = true
 ui.SHOW_ALL_TABS = 1
 view.caret_width = 5
 view.whitespace_size = 5
@@ -58,13 +56,13 @@ end
 events.connect(events.INITIALIZED, function()
     textadept.menu.menubar = nil
 
-    -- auto-output buffers -- event must be connected after INITIALIZED
+    -- auto-output buffers -- events must be connected after INITIALIZED
     local ensuredbgbufstyles = function()
-        if okStr(buffer.tab_label) then
-            ui.dialogs.msgbox({text=buffer.tab_label})
-        end
         if buffer.filename and string.len(buffer.filename) > 0 then
             return
+        end
+        if okStr(buffer.tab_label) then
+            ui.dialogs.msgbox({text=buffer.tab_label})
         end
         buffer.zoom = -3
         if buffer:get_lexer() ~= "dbgbuf" then
@@ -113,15 +111,17 @@ end
 -- (also highlight all current-selection occurrences since we're gathering them anyway)
 events.connect(events.UPDATE_UI, function(upd)
     if (not okStr(ui.statusbar_text)) and buffer and okStr(buffer.filename) and (not ui.find.active) then
-        ui.statusbar_text = buffer.filename
+        local idx = _BUFFERS[buffer]
+        ui.statusbar_text = "#" .. (idx-msgbufs) .. "/"..(#_BUFFERS-msgbufs).." — " .. buffer.filename
     end
     if ((upd & buffer.UPDATE_SELECTION) == buffer.UPDATE_SELECTION) then
         buffer.indicator_current = textadept.editing.INDIC_HIGHLIGHT
         buffer:indicator_clear_range(1, buffer.length)
-        buffer:indicator_clear_range(1, buffer.length)
-
         local charcount = buffer:count_characters(buffer.selection_start, buffer.selection_end)
         local linecount = buffer:line_from_position(buffer.selection_end) - buffer:line_from_position(buffer.selection_start) + 1
+        if buffer.char_at[buffer:position_before(math.max(buffer.selection_start, buffer.selection_end))] == 10 then
+            linecount = linecount - 1
+        end
         if charcount > 2 or linecount > 2 then
             local seltxt, seltxtl, buftxt, buftxtl = buffer:get_sel_text(), string.lower(buffer:get_sel_text()), buffer:get_text(), string.lower(buffer:get_text())
             local occurs, occursl, idx, idxl = 0, 0, string.find(buftxt, seltxt, 1, 'plain'), string.find(buftxtl, seltxtl, 1, 'plain')
@@ -141,21 +141,6 @@ events.connect(events.UPDATE_UI, function(upd)
     end
 end)
 
-
-
-
--- Find/Replace entry: incremental find-on-type
-events.connect(events.FIND_TEXT_CHANGED, function()
-    local haystack = string.lower(buffer:get_text())
-    local needle = string.lower(ui.find.find_entry_text)
-    local istart, iend = string.find(haystack, needle, buffer.anchor, 'plain')
-    if (not istart) or istart < buffer.anchor then
-        istart, iend = string.find(haystack, ui.find.find_entry_text, 1, 'plain')
-    end
-    if istart and (istart > 0) and iend and (iend > istart) then
-        buffer:set_sel(istart, iend+1)
-    end
-end)
 
 
 --view.mouse_dwell_time = 777
@@ -219,6 +204,20 @@ events.connect(events.BUFFER_DELETED, refreshOpenFileNames)
 
 -- for alt+1 ... alt+9 to move to buffer/tab at the specified position index
 local gotoBuffer = function(nr)
+    local numbufs = #_BUFFERS - msgbufs
+    if numbufs <= 0 then return end
+    local curnr = _BUFFERS[buffer] - msgbufs
+    if nr == -1 then
+        nr = curnr - 1
+    elseif nr == 0 then
+        nr = curnr + 1
+    end
+    if nr < 1 then
+        nr = numbufs
+    elseif nr > numbufs then
+        nr = 1
+    end
+
     nr = msgbufs + nr
     if #_BUFFERS < nr then
         nr = #_BUFFERS
@@ -229,14 +228,16 @@ end
 
 
 
-lsp.log_rpc = false
+lsp.log_rpc = true
 lsp.show_diagnostics = true
 lsp.show_all_diagnostics = true
 
 
--- golang stuff
+-- lang-specific stuff
+textadept.file_types.extensions.dummy = 'dbgbuf'
 events.connect(events.INITIALIZED, function()
     lsp.server_commands.go = 'pipethru'
+    lsp.server_commands.dummy = 'dummylangserver'
 end)
 local onBuildOrRun = function(str)
     clearDbgBufs()
@@ -279,9 +280,9 @@ local encloseOrPrepend = function(left, right, always_both)
     if not buffer.selection_empty then
         textadept.editing.enclose(left, right, true)
     else
-        local next = string.byte(buffer:get_text(), buffer.anchor)
-        local prev = (buffer.anchor > 1) and string.byte(buffer:get_text(), buffer.anchor - 1) or 0
-        local both = (next == 32) or (next == 10) or (next == 13) or (next == 9) or (next == 41) or (next == 93) or (next == 125)
+        local next = string.byte(buffer:get_text(), buffer.current_pos)
+        local prev = (buffer.current_pos > 1) and string.byte(buffer:get_text(), buffer:position_before(buffer.current_pos)) or 0
+        local both = (next == 32) or (next == 44) or (next == 59) or (next == 10) or (next == 13) or (next == 9) or (next == 41) or (next == 93) or (next == 125)
         both = both and not ((prev ~= 0) and (left == right) and (string.len(left) == 1) and (prev == string.byte(left, 1)))
         buffer:begin_undo_action()
         for i = 1, buffer.selections do
@@ -316,16 +317,18 @@ keys['alt+7'] = function() gotoBuffer(7) end
 keys['alt+8'] = function() gotoBuffer(8) end
 keys['alt+9'] = function() gotoBuffer(9) end
 keys['alt+0'] = function() gotoBuffer(#_BUFFERS) end
-keys['alt+ '] = function()
+keys['ctrl+\t'] = function()
     if lastbuf and _BUFFERS[lastbuf] then
         view:goto_buffer(lastbuf)
     else
         ui.switch_buffer(true)
     end
 end
-keys['ctrl+alt+ '] = function()
+keys['ctrl+shift+\t'] = function()
     ui.switch_buffer(true)
 end
+keys['ctrl+pgup'] = function() gotoBuffer(-1) end
+keys['ctrl+pgdn'] = function() gotoBuffer(0) end
 keys['ctrl+T'] = function()
     if #recentlyclosedfilenames > 0 then
         io.open_file(recentlyclosedfilenames[#recentlyclosedfilenames])
@@ -387,13 +390,13 @@ keys['f12'] = function()
 end
 keys['ctrl+f'] = function()
     ui.find.find_entry_text = buffer:get_sel_text()
-    ui.find.focus()
+    ui.find.focus({ incremental = true })
 end
 keys['\b'] = function()
-    local next = string.byte(buffer:get_text(), buffer.anchor) or 0
-    local prev = (buffer.anchor > 1) and string.byte(buffer:get_text(), buffer.anchor - 1) or 0
+    local next = string.byte(buffer:get_text(), buffer.current_pos) or 0
+    local prev = (buffer.current_pos > 1) and string.byte(buffer:get_text(), buffer:position_before(buffer.current_pos)) or 0
     if (next == 125 and prev == 123) or (next == 93 and prev == 91) or (next == 41 and prev == 40) or (next == 96 and prev == 96) or (next == 34 and prev == 34) or (next == 39 and prev == 39) then
-        buffer:delete_range(buffer.anchor - 1, 2)
+        buffer:delete_range(buffer:position_before(buffer.current_pos), 2)
     else
         buffer:delete_back()
     end
@@ -412,7 +415,8 @@ keys['ctrl+\b'] = function()
         buffer:del_word_left()
     end
 end
+
 keys['ctrl+ '] = function()
     local name = buffer:get_lexer()
-    textadept.editing.autocomplete((name == "go") and "lsp" or (okStr(name) and name or "word"))
+    textadept.editing.autocomplete((name == "go" or name == "dbgbuf") and "lsp" or (okStr(name) and name or "word"))
 end
