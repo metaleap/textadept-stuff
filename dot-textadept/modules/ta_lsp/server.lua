@@ -1,6 +1,5 @@
 local json = require('ta_lsp.dkjson')
 
-local Server = { log_rpc = true, allow_markdown_docs = true }
 
 local jobj = json.decode('{}') -- plain lua {}s would mal-encode into json []s
 local msgicons = {"gtk-dialog-error", "gtk-dialog-warning", "gtk-dialog-info", "gtk-dialog-info", "gtk-dialog-question"}
@@ -8,8 +7,18 @@ local inreqs_ignore, inreqs_todo, notifs_ignore = {}, {}, {}
 inreqs_todo['client/registerCapability'] = 1
 notifs_ignore['telemetry/event'] = 1
 
+
+local Server = { log_rpc = true, allow_markdown_docs = true }
+
 function Server.new(lang, desc)
     local me = {lang = lang, desc = desc, server = { caps = nil, name = lang .. " LSP `" .. desc.cmd .. "`" }}
+    --local shutdown = function()
+    --    Server.sendRequest(me, "shutdown")
+    --    Server.sendNotify(me, 'exit')
+    --    Server.die(me)
+    --end
+    --events.connect(events.RESET_BEFORE, shutdown)
+    --events.connect(events.QUIT, shutdown)
     Server.ensureProc(me)
     return me
 end
@@ -26,7 +35,7 @@ end
 function Server.log(me, msg)
     if msg then
         local cur_view = view
-        ui._print('[LSP]', os.date():sub(17,25)..'['..me.lang..']\t'..msg)
+        ui._print('[LSP]', '['..me.lang..']\t'..msg)
         ui.goto_view(cur_view)
         setStatusBarText(msg)
     end
@@ -42,7 +51,7 @@ end
 function Server.ensureProc(me)
     local err
     if not Server.chk(me) then
-        me._reqid, me._initRecv, me._data, me._inbox = 0, false, "", {}
+        me._reqid, me._data, me._inbox = 0, "", {}
         me.proc, err = os.spawn(me.desc.cmd, me.desc.cwd or lfs.currentdir(),
                                 Server.onStdout(me), Server.onStderr(me), Server.onExit(me))
         if err then
@@ -83,7 +92,7 @@ function Server.die(me)
 end
 
 function Server.onExit(me) return function(exitcode)
-    Server.log(me, "exited: "..exitcode)
+    Server.log(me, "EXITED: "..exitcode)
     Server.die(me)
 end end
 

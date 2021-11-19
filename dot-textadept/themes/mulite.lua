@@ -1,7 +1,3 @@
--- Copyright 2007-2021 Mitchell. See LICENSE.
--- Light theme for Textadept.
--- Contributions by Ana Balan.
-
 local view, colors, styles = view, lexer.colors, lexer.styles
 
 -- Greyscale colors.

@@ -14,6 +14,7 @@ function M.ensureRunning(lang)
         return nil
     end
     if not M.servers[lang]._ then
+        M.servers[lang].log_rpc = M.log_rpc
         M.servers[lang]._ = server.new(lang, M.servers[lang])
     end
     return M.servers[lang]._
