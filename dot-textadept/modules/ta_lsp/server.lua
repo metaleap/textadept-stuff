@@ -28,15 +28,15 @@ function Server.ensureProc(me)
     local err
     if not Server.chk(me) then
         me._reqid, me._initRecv, me._data, me._inbox = 0, false, "", {}
-        me.proc, err = os.spawn(me.desc.cmd, me.desc.cwd or lfs.currentdir(),
-                                Server.onStdout(me), Server.onStderr(me), Server.onExit(me))
+        me.proc, err = os.spawn(me.desc.cmd, me.desc.cwd or lfs.currentdir())--,
+                                --Server.onStdout(me), Server.onStderr(me), Server.onExit(me))
         if err then
             Server.die(me)
             Server.log(me, err)
         end
         if me.proc then
             Server.log(me, me.proc:status())
-            local reqid = Server.sendRequest(me, 'initialize', {
+            local result = Server.sendRequest(me, 'initialize', {
                 processId = json.null, rootUri = json.null,
                 initializationOptions = me.desc.init_options or json.null,
                 capabilities = {
@@ -47,7 +47,7 @@ function Server.ensureProc(me)
                     }
                 }
             })
-            --local resp = Server.getResponse()
+            Server.log(me, "INITRESP:" .. json.encode(result))
         end
     end
     return Server.chk(me)
@@ -71,8 +71,8 @@ function Server.onStderr(me) return function(data)
 end end
 
 function Server.onStdout(me) return function(data)
-    Server.onIncomingData(me, data)
-    Server.processInbox(me)
+    --Server.onIncomingData(me, data)
+    --Server.processInbox(me)
 end end
 
 function Server.sendMsg(me, msg, addreqid)
@@ -105,7 +105,17 @@ function Server.sendResponse(me, reqid, result)
 end
 
 function Server.sendRequest(me, method, params)
-    return Server.sendMsg(me, {jsonrpc = '2.0', method = method, params = params}, true)
+    local reqid = Server.sendMsg(me, {jsonrpc = '2.0', method = method, params = params}, true)
+    local data = ""
+    while Server.ensureProc(me) do
+        local chunk = me.proc:read("L")
+        if (not chunk) then
+            break
+        end
+        data = data .. chunk
+    end
+    Server.onIncomingData(me, data)
+    return Server.processInbox(me, reqid)
 end
 
 function Server.onIncomingData(me, data)
@@ -113,31 +123,31 @@ function Server.onIncomingData(me, data)
     while true do
         local pos = string.find(me._data, "Content-Length: ", idx, 'plain')
         if not pos then
-            return
+            break
         end
         local numpos = pos + string.len("Content-Length: ")
         local rnpos = string.find(me._data, "\r\n", numpos, 'plain')
         if not rnpos then
-            return
+            break
         end
         local clen = tonumber(string.sub(me._data, numpos, rnpos))
         if (not clen) or clen < 2 then
             me._data = string.sub(me._data, rnpos)
-            return
+            break
         end
         local datapos = string.find(me._data, "\r\n\r\n", numpos, 'plain')
         if not datapos then
-            return
+            break
         end
         datapos = datapos + string.len("\r\n\r\n")
         local data = string.sub(me._data, datapos, datapos + clen)
         if (not data) or string.len(data) < clen then
-            return
+            break
         end
         idx, me._data = 1, string.sub(me._data, datapos + clen)
         local msg, errpos, errmsg = json.decode(data)
         if msg then
-            me._inbox[#me._inbox] = msg
+            me._inbox[1 + #me._inbox] = msg
         end
         if errmsg and string.len(errmsg) > 0 then
             Server.log(me, "UNJSON: '" .. errmsg .. "' at pos " .. errpos .. 'in: ' .. data)
@@ -158,7 +168,7 @@ function Server.processInbox(me, waitreqid)
             if msg.id == waitreqid then
                 return msg
             end
-            keeps[#keeps] = msg
+            keeps[1 + #keeps] = msg
         end
     end
     me._inbox = keeps
