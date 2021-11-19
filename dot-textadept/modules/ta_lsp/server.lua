@@ -11,7 +11,7 @@ end
 function Server.log(me, msg)
     if msg then
         local cur_view = view
-        ui._print('[LSP]', '['..me.lang..']\t'..msg)
+        ui._print('[LSP]', os.date():sub(17,25)..'['..me.lang..']\t'..msg)
         ui.goto_view(cur_view)
         ui.statusbar_text = msg
     end
@@ -28,8 +28,8 @@ function Server.ensureProc(me)
     local err
     if not Server.chk(me) then
         me._reqid, me._initRecv, me._data, me._inbox = 0, false, "", {}
-        me.proc, err = os.spawn(me.desc.cmd, me.desc.cwd or lfs.currentdir())--,
-                                --Server.onStdout(me), Server.onStderr(me), Server.onExit(me))
+        me.proc, err = os.spawn(me.desc.cmd, me.desc.cwd or lfs.currentdir(),
+                                Server.onStdout(me), Server.onStderr(me), Server.onExit(me))
         if err then
             Server.die(me)
             Server.log(me, err)
@@ -67,7 +67,7 @@ function Server.onExit(me) return function(exitcode)
 end end
 
 function Server.onStderr(me) return function(data)
-    Server.log(me, data)
+    --Server.log(me, data)
 end end
 
 function Server.onStdout(me) return function(data)
@@ -104,21 +104,62 @@ function Server.sendResponse(me, reqid, result)
     Server.sendMsg(me, {jsonrpc = '2.0', id = reqid, result = result})
 end
 
+function parseContentLength(str)
+    local pos = string.find(str, "Content-Length:", idx, 'plain')
+    if not pos then
+        return
+    end
+    local numpos = pos + string.len("Content-Length:")
+    local rnpos = string.find(str, "\r\n", numpos, 'plain')
+    if not rnpos then
+        return
+    end
+    return tonumber(string.sub(str, numpos, rnpos))
+end
+
+function Server.pushToInbox(me, data)
+    local msg, errpos, errmsg = json.decode(data)
+    if msg then
+        me._inbox[1 + #me._inbox] = msg
+    end
+    if errmsg and string.len(errmsg) > 0 then
+        Server.log(me, "UNJSON: '" .. errmsg .. "' at pos " .. errpos .. 'in: ' .. data)
+        ui.dialogs.msgbox({text = 'Bad JSON, check LSP log'})
+    end
+end
+
 function Server.sendRequest(me, method, params)
     local reqid = Server.sendMsg(me, {jsonrpc = '2.0', method = method, params = params}, true)
-    local data = ""
-    while Server.ensureProc(me) do
+    local accum, posrn = "", nil
+    while (not posrn) and Server.ensureProc(me) do
         local chunk = me.proc:read("L")
         if (not chunk) then
             break
+        else
+            accum = accum .. chunk
+            posrn = string.find(accum, "\r\n\r\n", 1, 'plain')
         end
-        data = data .. chunk
     end
-    Server.onIncomingData(me, data)
-    return Server.processInbox(me, reqid)
+    if posrn then
+        local posdata = posrn + 4 -- aka len("\r\n\r\n")
+        local numbytesgot = string.len(accum) - posdata
+        local clen = parseContentLength(string.sub(accum, 1, posn1))
+        Server.log(me, numbytesgot..("("..string.len(accum).."-"..posdata..")").."\tC"..clen)
+        --if clen then
+        --    local tail = me.proc:read(clen - numbytesgot)
+        --    if tail then
+        --        local data = string.sub(accum, posdata) .. tail
+        --        Server.pushToInbox(me, data)
+        --        return Server.processInbox(me, reqid)
+        --    end
+        --end
+    end
 end
 
-function Server.onIncomingData(me, data)
+function Server.onIncomingData(me, data, clen)
+    if not data then
+        return
+    end
     me._data = me._data .. data
     while true do
         local pos = string.find(me._data, "Content-Length: ", idx, 'plain')
@@ -145,14 +186,7 @@ function Server.onIncomingData(me, data)
             break
         end
         idx, me._data = 1, string.sub(me._data, datapos + clen)
-        local msg, errpos, errmsg = json.decode(data)
-        if msg then
-            me._inbox[1 + #me._inbox] = msg
-        end
-        if errmsg and string.len(errmsg) > 0 then
-            Server.log(me, "UNJSON: '" .. errmsg .. "' at pos " .. errpos .. 'in: ' .. data)
-            ui.dialogs.msgbox({text = 'Bad JSON, check LSP log'})
-        end
+        Server.pushToInbox(me, data)
     end
 end
 
@@ -165,7 +199,7 @@ function Server.processInbox(me, waitreqid)
         elseif msg.method then
             Server.onIncomingNotification(me, msg)
         elseif msg.id then
-            if msg.id == waitreqid then
+            if waitreqid and msg.id == waitreqid then
                 return msg
             end
             keeps[1 + #keeps] = msg

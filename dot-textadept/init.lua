@@ -240,7 +240,7 @@ textadept.file_types.extensions.dummy = 'dbgbuf'
 events.connect(events.INITIALIZED, function()
     lsp.servers.dummy = {cmd = 'dummylangserver', init_options = nil}
 
-    lsp.ensureRunning('dummy')
+    timeout(2, function() lsp.ensureRunning('dummy') end)
 end)
 local onBuildOrRun = function(str)
     clearDbgBufs()
