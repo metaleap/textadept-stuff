@@ -1,7 +1,12 @@
 local json = require('ta_lsp.dkjson')
 
-local jobj = json.decode('{}') -- plain lua {}s would turn into json []s
 local Server = { log_rpc = true, allow_markdown_docs = true }
+
+local jobj = json.decode('{}') -- plain lua {}s would mal-encode into json []s
+local msgicons = {"gtk-dialog-error", "gtk-dialog-warning", "gtk-dialog-info", "gtk-dialog-info", "gtk-dialog-question"}
+local inreqs_ignore, inreqs_todo, notifs_ignore = {}, {}, {}
+inreqs_todo['client/registerCapability'] = 1
+notifs_ignore['telemetry/event'] = 1
 
 function Server.new(lang, desc)
     local me = {lang = lang, desc = desc, server = { caps = nil, name = lang .. " LSP `" .. desc.cmd .. "`" }}
@@ -9,12 +14,21 @@ function Server.new(lang, desc)
     return me
 end
 
+function setStatusBarText(text)
+    ui.statusbar_text = string.gsub(string.gsub(text, "\r", ""), "\n", " — ")
+end
+
+function Server.showMsgBox(me, text, level)
+    setStatusBarText(text)
+    ui.dialogs.msgbox({ title = me.server.name, text = text, icon = level and msgicons[level] or nil })
+end
+
 function Server.log(me, msg)
     if msg then
         local cur_view = view
         ui._print('[LSP]', os.date():sub(17,25)..'['..me.lang..']\t'..msg)
         ui.goto_view(cur_view)
-        ui.statusbar_text = string.gsub(string.gsub(msg, "\r", ""), "\n", " — ")
+        setStatusBarText(msg)
     end
 end
 
@@ -183,7 +197,7 @@ function Server.onIncomingData(me, incoming)
             break
         end
         datapos = datapos + #"\r\n\r\n"
-        local data = string.sub(me._data, datapos, datapos + clen)
+        local data = string.sub(me._data, datapos, (datapos + clen) - 1)
         if (not data) or #data < clen then
             break
         end
@@ -202,7 +216,7 @@ function Server.pushToInbox(me, data)
     end
     if errmsg and #errmsg > 0 then
         Server.log(me, "UNJSON: '" .. errmsg .. "' at pos " .. errpos .. 'in: ' .. data)
-        ui.dialogs.msgbox({text = 'Bad JSON, check LSP log'})
+        Server.showMsgBox(me, 'Bad JSON, check LSP log', 2)
     end
 end
 
@@ -219,26 +233,30 @@ function Server.processInbox(me, waitreqid)
                 return msg
             end
             keeps[1 + #keeps] = msg
+        else
+            Server.showMsgBox(me, "JSONRPCWOT:"..json.encode(msg), 1)
         end
     end
     me._inbox = keeps
 end
 
 function Server.onIncomingNotification(me, msg)
-    if msg.method == "xwindow/showMessage" then
-        --{"method":"window/showMessage","params":{"message":"So it's you... SomeUnnamedLspClient","type":2},"jsonrpc":"2.0"}
-    else
-        Server.log(me, "NOTIF: "..msg.method)
-        ui.dialogs.msgbox({ title = me.server.name, text = msg.method })
+    if msg.params and msg.method == "window/showMessage" and msg.params.message then
+        Server.showMsgBox(me, msg.params.message, msg.params.type or 5)
+    elseif msg.params and msg.method == "window/logMessage" and msg.params.message then
+        Server.log(me, "LOGIT:\t" .. msg.params.message)
+    elseif not notifs_ignore[msg.method] then
+        Server.log(me, "NOTIF:\t"..json.encode(msg))
+        Server.showMsgBox(me, msg.method, 5)
     end
 end
 
 function Server.onIncomingRequest(me, msg)
-    Server.log(me, "INREQ: " .. json.encode(msg))
-    if msg.id == 'client/registerCapability' then
-        Server.sendResponse(me, msg.id, jobj)
-    else
-        Server.sendResponse(me, msg.id, nil, jRpcErr("That's not on."))
+    local known = inreqs_ignore[msg.method] or inreqs_todo[msg.method]
+    Server.sendResponse(me, msg.id, nil, jRpcErr("That's not on."))
+    if not known then
+        Server.log(me, "INREQ:\t" .. json.encode(msg))
+        Server.showMsgBox(me, msg.method, 5)
     end
 end
 
