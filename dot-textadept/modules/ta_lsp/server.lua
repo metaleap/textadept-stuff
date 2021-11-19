@@ -86,7 +86,7 @@ function Server.sendMsg(me, msg, addreqid)
             Server.log(me, data)
         end
         local ok, err = me.proc:write("Content-Length: "..(#data+2).."\r\n\r\n"..data.."\r\n")
-        if (not ok) and err and string.len(err) > 0 then
+        if (not ok) and err and #err > 0 then
             Server.die(me)
             Server.log(me, err)
             -- the below, via ensureProc, will restart server, which sends init stuff before ours. (they do crash sometimes, or pipes break..)
@@ -109,7 +109,7 @@ function parseContentLength(str)
     if not pos then
         return
     end
-    local numpos = pos + string.len("Content-Length:")
+    local numpos = pos + #"Content-Length:"
     local rnpos = string.find(str, "\r\n", numpos, 'plain')
     if not rnpos then
         return
@@ -122,38 +122,40 @@ function Server.pushToInbox(me, data)
     if msg then
         me._inbox[1 + #me._inbox] = msg
     end
-    if errmsg and string.len(errmsg) > 0 then
+    if errmsg and #errmsg > 0 then
         Server.log(me, "UNJSON: '" .. errmsg .. "' at pos " .. errpos .. 'in: ' .. data)
         ui.dialogs.msgbox({text = 'Bad JSON, check LSP log'})
     end
 end
 
 function Server.sendRequest(me, method, params)
-    local reqid = Server.sendMsg(me, {jsonrpc = '2.0', method = method, params = params}, true)
-    local accum, posrn = "", nil
-    while (not posrn) and Server.ensureProc(me) do
-        local chunk = me.proc:read("L")
-        if (not chunk) then
-            break
-        else
-            accum = accum .. chunk
-            posrn = string.find(accum, "\r\n\r\n", 1, 'plain')
+    local resp, reqid = nil, Server.sendMsg(me, {jsonrpc = '2.0', method = method, params = params}, true)
+    while not resp do
+        local accum, posrn = "", nil
+        while (not posrn) and Server.ensureProc(me) do
+            local chunk = me.proc:read("L")
+            if (not chunk) then
+                break
+            else
+                accum = accum .. chunk
+                posrn = string.find(accum, "\r\n\r\n", 1, 'plain')
+            end
+        end
+        if posrn then
+            local posdata = posrn + 4
+            local numbytesgot = #accum - (posdata - 1)
+            local clen = parseContentLength(string.sub(accum, 1, posn1))
+            if clen then
+                local tail = me.proc:read(clen - numbytesgot)
+                if tail then
+                    local data = string.sub(accum, posdata) .. tail
+                    Server.pushToInbox(me, data)
+                    resp = Server.processInbox(me, reqid)
+                end
+            end
         end
     end
-    if posrn then
-        local posdata = posrn + 4 -- aka len("\r\n\r\n")
-        local numbytesgot = string.len(accum) - posdata
-        local clen = parseContentLength(string.sub(accum, 1, posn1))
-        Server.log(me, numbytesgot..("("..string.len(accum).."-"..posdata..")").."\tC"..clen)
-        --if clen then
-        --    local tail = me.proc:read(clen - numbytesgot)
-        --    if tail then
-        --        local data = string.sub(accum, posdata) .. tail
-        --        Server.pushToInbox(me, data)
-        --        return Server.processInbox(me, reqid)
-        --    end
-        --end
-    end
+    return resp
 end
 
 function Server.onIncomingData(me, data, clen)
@@ -166,7 +168,7 @@ function Server.onIncomingData(me, data, clen)
         if not pos then
             break
         end
-        local numpos = pos + string.len("Content-Length: ")
+        local numpos = pos + #"Content-Length: "
         local rnpos = string.find(me._data, "\r\n", numpos, 'plain')
         if not rnpos then
             break
@@ -180,9 +182,9 @@ function Server.onIncomingData(me, data, clen)
         if not datapos then
             break
         end
-        datapos = datapos + string.len("\r\n\r\n")
+        datapos = datapos + #"\r\n\r\n"
         local data = string.sub(me._data, datapos, datapos + clen)
-        if (not data) or string.len(data) < clen then
+        if (not data) or #data < clen then
             break
         end
         idx, me._data = 1, string.sub(me._data, datapos + clen)
