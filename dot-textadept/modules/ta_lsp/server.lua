@@ -1,9 +1,10 @@
 local json = require('ta_lsp.dkjson')
 
+local jobj = json.decode('{}') -- plain lua {}s would turn into json []s
 local Server = { log_rpc = true, allow_markdown_docs = true }
 
 function Server.new(lang, desc)
-    local me = {lang = lang, desc = desc}
+    local me = {lang = lang, desc = desc, server = { caps = nil, name = lang .. " LSP `" .. desc.cmd .. "`" }}
     Server.ensureProc(me)
     return me
 end
@@ -13,7 +14,7 @@ function Server.log(me, msg)
         local cur_view = view
         ui._print('[LSP]', os.date():sub(17,25)..'['..me.lang..']\t'..msg)
         ui.goto_view(cur_view)
-        ui.statusbar_text = msg
+        ui.statusbar_text = string.gsub(string.gsub(msg, "\r", ""), "\n", " — ")
     end
 end
 
@@ -36,18 +37,24 @@ function Server.ensureProc(me)
         end
         if me.proc then
             Server.log(me, me.proc:status())
-            local result = Server.sendRequest(me, 'initialize', {
+            local resp = Server.sendRequest(me, 'initialize', {
                 processId = json.null, rootUri = json.null,
                 initializationOptions = me.desc.init_options or json.null,
                 capabilities = {
-                    window = {showMessage = {}},
-                    workspace = {},
+                    window = {showMessage = jobj},
+                    workspace = jobj,
                     textDocument = {
                         hover = { contentFormat = Server.allow_markdown_docs and { 'markdown', 'plaintext' } or { 'plaintext' } }
                     }
                 }
             })
-            Server.log(me, "INITRESP:" .. json.encode(result))
+            Server.sendNotify(me, 'initialized', jobj)
+            if resp and resp.result then
+                me.server.caps = resp.result.capabilities
+                if resp.result.serverInfo and resp.result.serverInfo.name and #resp.result.serverInfo.name > 0 then
+                    me.server.name = resp.result.serverInfo.name
+                end
+            end
         end
     end
     return Server.chk(me)
@@ -67,13 +74,30 @@ function Server.onExit(me) return function(exitcode)
 end end
 
 function Server.onStderr(me) return function(data)
-    --Server.log(me, data)
+    Server.log(me, data)
 end end
 
 function Server.onStdout(me) return function(data)
-    --Server.onIncomingData(me, data)
-    --Server.processInbox(me)
+    Server.onIncomingData(me, data)
+    Server.processInbox(me)
 end end
+
+function jRpcErr(msg)
+    return {code = -32603, message = msg}
+end
+
+function parseContentLength(str)
+    local pos = string.find(str, "Content-Length:", 1, 'plain')
+    if not pos then
+        return
+    end
+    local numpos = pos + #"Content-Length:"
+    local rnpos = string.find(str, "\r", numpos, 'plain')
+    if not rnpos then
+        return
+    end
+    return tonumber(string.sub(str, numpos, rnpos))
+end
 
 function Server.sendMsg(me, msg, addreqid)
     if Server.ensureProc(me) then
@@ -83,7 +107,7 @@ function Server.sendMsg(me, msg, addreqid)
         end
         local data = json.encode(msg)
         if Server.log_rpc then
-            Server.log(me, data)
+            Server.log(me, ">>>>" .. data)
         end
         local ok, err = me.proc:write("Content-Length: "..(#data+2).."\r\n\r\n"..data.."\r\n")
         if (not ok) and err and #err > 0 then
@@ -100,32 +124,8 @@ function Server.sendNotify(me, method, params)
     Server.sendMsg(me, {jsonrpc = '2.0', method = method, params = params})
 end
 
-function Server.sendResponse(me, reqid, result)
-    Server.sendMsg(me, {jsonrpc = '2.0', id = reqid, result = result})
-end
-
-function parseContentLength(str)
-    local pos = string.find(str, "Content-Length:", idx, 'plain')
-    if not pos then
-        return
-    end
-    local numpos = pos + #"Content-Length:"
-    local rnpos = string.find(str, "\r\n", numpos, 'plain')
-    if not rnpos then
-        return
-    end
-    return tonumber(string.sub(str, numpos, rnpos))
-end
-
-function Server.pushToInbox(me, data)
-    local msg, errpos, errmsg = json.decode(data)
-    if msg then
-        me._inbox[1 + #me._inbox] = msg
-    end
-    if errmsg and #errmsg > 0 then
-        Server.log(me, "UNJSON: '" .. errmsg .. "' at pos " .. errpos .. 'in: ' .. data)
-        ui.dialogs.msgbox({text = 'Bad JSON, check LSP log'})
-    end
+function Server.sendResponse(me, reqid, result, error)
+    Server.sendMsg(me, {jsonrpc = '2.0', id = reqid, result = result, error = error})
 end
 
 function Server.sendRequest(me, method, params)
@@ -158,18 +158,18 @@ function Server.sendRequest(me, method, params)
     return resp
 end
 
-function Server.onIncomingData(me, data, clen)
-    if not data then
+function Server.onIncomingData(me, incoming)
+    if not incoming then
         return
     end
-    me._data = me._data .. data
+    me._data = me._data .. incoming
     while true do
-        local pos = string.find(me._data, "Content-Length: ", idx, 'plain')
+        local pos = string.find(me._data, "Content-Length:", 1, 'plain')
         if not pos then
             break
         end
-        local numpos = pos + #"Content-Length: "
-        local rnpos = string.find(me._data, "\r\n", numpos, 'plain')
+        local numpos = pos + #"Content-Length:"
+        local rnpos = string.find(me._data, "\r", numpos, 'plain')
         if not rnpos then
             break
         end
@@ -187,8 +187,22 @@ function Server.onIncomingData(me, data, clen)
         if (not data) or #data < clen then
             break
         end
-        idx, me._data = 1, string.sub(me._data, datapos + clen)
+        me._data = string.sub(me._data, datapos + clen)
         Server.pushToInbox(me, data)
+    end
+end
+
+function Server.pushToInbox(me, data)
+    if Server.log_rpc then
+        Server.log(me, "<<<<" .. data)
+    end
+    local msg, errpos, errmsg = json.decode(data)
+    if msg then
+        me._inbox[1 + #me._inbox] = msg
+    end
+    if errmsg and #errmsg > 0 then
+        Server.log(me, "UNJSON: '" .. errmsg .. "' at pos " .. errpos .. 'in: ' .. data)
+        ui.dialogs.msgbox({text = 'Bad JSON, check LSP log'})
     end
 end
 
@@ -211,11 +225,21 @@ function Server.processInbox(me, waitreqid)
 end
 
 function Server.onIncomingNotification(me, msg)
-    Server.log(me, "NOTIF: " .. msg.method)
+    if msg.method == "xwindow/showMessage" then
+        --{"method":"window/showMessage","params":{"message":"So it's you... SomeUnnamedLspClient","type":2},"jsonrpc":"2.0"}
+    else
+        Server.log(me, "NOTIF: "..msg.method)
+        ui.dialogs.msgbox({ title = me.server.name, text = msg.method })
+    end
 end
 
 function Server.onIncomingRequest(me, msg)
-    Server.log(me, "INREQ: " .. msg.method)
+    Server.log(me, "INREQ: " .. json.encode(msg))
+    if msg.id == 'client/registerCapability' then
+        Server.sendResponse(me, msg.id, jobj)
+    else
+        Server.sendResponse(me, msg.id, nil, jRpcErr("That's not on."))
+    end
 end
 
 
