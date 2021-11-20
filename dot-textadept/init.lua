@@ -250,6 +250,7 @@ end
 
 -- lang-specific stuff
 textadept.file_types.extensions.dummy = 'dummy'
+--textadept.file_types.extensions.go = 'gopls'
 lsp_adept.lang_servers.dummy = {cmd = 'dummylangserver', init_options = nil}
 local onBuildOrRun = function(str)
     clearDbgBufs()
