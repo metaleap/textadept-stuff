@@ -4,7 +4,11 @@ local fontsize = 17
 local screenwidth = 3840
 
 require('file_diff')
+
+local go_adept = true
 local lsp_adept = require('lsp-adept')
+local lsp_cmp = require('lsp')
+lsp_cmp.log_rpc = true
 
 textadept.run.run_in_background = true
 textadept.editing.auto_pairs = nil -- own impl, see `encloseOrPrepend()` below
@@ -250,8 +254,12 @@ end
 
 -- lang-specific stuff
 textadept.file_types.extensions.dummy = 'dummy'
---lsp_adept.lang_servers.dummy = {cmd = 'dummylangserver'}
-lsp_adept.lang_servers.go = {cmd = 'pipethru'}
+lsp_adept.lang_servers.dummy = {cmd = 'dummylangserver'}
+if go_adept then
+    lsp_adept.lang_servers.go = {cmd = 'gopls'}
+else
+    lsp_cmp.server_commands.go = 'gopls'
+end
 local onBuildOrRun = function(str)
     clearDbgBufs()
     ui.print("")
@@ -389,6 +397,8 @@ keys['ctrl+r'] = reset
 keys['f1'] = function()
     if lsp_adept.pertinent() then
         lsp_adept.features.textDocument.hover.show()
+    elseif buffer:get_lexer(true) == "go" and not go_adept then
+        lsp_cmp.hover()
     else
         textadept.editing.show_documentation()
     end
