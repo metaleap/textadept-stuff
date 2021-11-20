@@ -1,4 +1,4 @@
-local json = require('lsp-adept.dkjson')
+local json = require('lsp-adept.deps.dkjson')
 
 
 local jobj = json.decode('{}') -- plain lua {}s would mal-encode into json []s
