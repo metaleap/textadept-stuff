@@ -4,7 +4,7 @@ local fontsize = 17
 local screenwidth = 3840
 
 require('file_diff')
-local lsp = require('ta_lsp')
+local lsp = require('lsp-adept')
 
 textadept.run.run_in_background = true
 textadept.editing.auto_pairs = nil -- own impl, see `encloseOrPrepend()` below
@@ -238,7 +238,7 @@ end
 -- lang-specific stuff
 textadept.file_types.extensions.dummy = 'dbgbuf'
 events.connect(events.INITIALIZED, function()
-    lsp.servers.dummy = {cmd = 'dummylangserver', init_options = nil}
+    lsp.lang_servers.dummy = {cmd = 'dummylangserver', init_options = nil}
 
     timeout(1, function() lsp.ensureRunning('dummy') end)
 end)
@@ -350,8 +350,8 @@ keys['ctrl++'] = view.zoom_in
 keys['ctrl+U'] = buffer.upper_case
 keys['ctrl+L'] = buffer.lower_case
 keys['ctrl+m'] = function()
-    local fifth = screenwidth / 5
-    view.size = (view.size <= fifth) and (fifth * 4) or fifth
+    local sixth = screenwidth / 6
+    view.size = (view.size <= sixth) and (sixth * 5) or sixth
 end
 keys['ctrl+g'] = function()
     textadept.history.record()
@@ -427,5 +427,5 @@ end
 
 keys['ctrl+ '] = function()
     local name = buffer:get_lexer()
-    textadept.editing.autocomplete((name == "go" or name == "dbgbuf") and "ta_lsp" or (okStr(name) and name or "word"))
+    textadept.editing.autocomplete((name == "go" or name == "dbgbuf") and "lsp" or (okStr(name) and name or "word"))
 end

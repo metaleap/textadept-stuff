@@ -1,4 +1,4 @@
-local json = require('ta_lsp.dkjson')
+local json = require('lsp-adept.dkjson')
 
 
 local jobj = json.decode('{}') -- plain lua {}s would mal-encode into json []s
@@ -8,17 +8,10 @@ inreqs_todo['client/registerCapability'] = 1
 notifs_ignore['telemetry/event'] = 1
 
 
-local Server = { log_rpc = true, allow_markdown_docs = true }
+local Server = { log_rpc = true, allow_markdown_docs = true, shutting_down = false }
 
 function Server.new(lang, desc)
     local me = {lang = lang, desc = desc, server = { caps = nil, name = lang .. " LSP `" .. desc.cmd .. "`" }}
-    --local shutdown = function()
-    --    Server.sendRequest(me, "shutdown")
-    --    Server.sendNotify(me, 'exit')
-    --    Server.die(me)
-    --end
-    --events.connect(events.RESET_BEFORE, shutdown)
-    --events.connect(events.QUIT, shutdown)
     Server.ensureProc(me)
     return me
 end
@@ -50,7 +43,7 @@ end
 
 function Server.ensureProc(me)
     local err
-    if not Server.chk(me) then
+    if (not Server.shutting_down) and not Server.chk(me) then
         me._reqid, me._data, me._inbox = 0, "", {}
         me.proc, err = os.spawn(me.desc.cmd, me.desc.cwd or lfs.currentdir(),
                                 Server.onStdout(me), Server.onStderr(me), Server.onExit(me))
@@ -151,8 +144,11 @@ function Server.sendResponse(me, reqid, result, error)
     Server.sendMsg(me, {jsonrpc = '2.0', id = reqid, result = result, error = error})
 end
 
-function Server.sendRequest(me, method, params)
+function Server.sendRequest(me, method, params, ignore_result)
     local resp, reqid = nil, Server.sendMsg(me, {jsonrpc = '2.0', method = method, params = params}, true)
+    if ignore_result then
+        return
+    end
     while not resp do
         local accum, posrn = "", nil
         while (not posrn) and Server.ensureProc(me) do
@@ -197,6 +193,7 @@ function Server.onIncomingData(me, incoming)
             break
         end
         local clen = tonumber(string.sub(me._data, numpos, rnpos))
+        --local clen = parseContentLength(me._data)
         if (not clen) or clen < 2 then
             me._data = string.sub(me._data, rnpos)
             break
