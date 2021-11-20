@@ -9,4 +9,8 @@ Hover.clientCapabilities = function()
 end
 
 
+Hover.showHover = function()
+end
+
+
 return Hover
