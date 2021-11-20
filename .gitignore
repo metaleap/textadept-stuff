@@ -1,2 +1,4 @@
 *.luac
 session
+lsp
+lsp-adept
