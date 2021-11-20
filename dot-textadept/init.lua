@@ -53,8 +53,8 @@ end
 
 
 
--- hide top menu bar
 events.connect(events.INITIALIZED, function()
+    -- hide top menu bar
     textadept.menu.menubar = nil
 
     -- auto-output buffers -- events must be connected after INITIALIZED
@@ -215,7 +215,9 @@ local gotoBuffer = function(nr)
     local numbufs = #_BUFFERS - msgbufs
     if numbufs <= 1 then return end
     local curnr = _BUFFERS[buffer] - msgbufs
-    if nr == -1 then
+    if nr > numbufs then
+        nr = numbufs
+    elseif nr == -1 then
         nr = curnr - 1
     elseif nr == 0 then
         nr = curnr + 1
@@ -236,12 +238,8 @@ end
 
 
 -- lang-specific stuff
-textadept.file_types.extensions.dummy = 'dbgbuf'
-events.connect(events.INITIALIZED, function()
-    lsp_adept.lang_servers.dummy = {cmd = 'dummylangserver', init_options = nil}
-
-    timeout(1, function() lsp_adept.ensureRunning('dummy') end)
-end)
+textadept.file_types.extensions.dummy = 'dummy'
+lsp_adept.lang_servers.dummy = {cmd = 'dummylangserver', init_options = nil}
 local onBuildOrRun = function(str)
     clearDbgBufs()
     ui.print("")
@@ -427,5 +425,5 @@ end
 
 keys['ctrl+ '] = function()
     local name = buffer:get_lexer()
-    textadept.editing.autocomplete((name == "go" or name == "dbgbuf") and "lsp_adept" or (okStr(name) and name or "word"))
+    textadept.editing.autocomplete((name == "go" or name == "dummy") and "lsp_adept" or (okStr(name) and name or "word"))
 end
