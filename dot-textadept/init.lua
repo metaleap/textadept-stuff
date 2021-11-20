@@ -57,7 +57,7 @@ events.connect(events.INITIALIZED, function()
     -- hide top menu bar
     textadept.menu.menubar = nil
 
-    -- auto-output buffers -- events must be connected after INITIALIZED
+    -- style the programmatic-output buffers
     local ensuredbgbufstyles = function()
         if buffer.filename and string.len(buffer.filename) > 0 then
             return
@@ -69,6 +69,17 @@ events.connect(events.INITIALIZED, function()
     end
     events.connect(events.BUFFER_AFTER_SWITCH, ensuredbgbufstyles)
     events.connect(events.VIEW_AFTER_SWITCH, ensuredbgbufstyles)
+
+    ui.goto_view(1)
+    for idx, buf in ipairs(_BUFFERS) do
+        if not buf.filename then
+            buf:clear_all()
+            local buftype = buf._type or ""
+            buf:append_text("|" .. string.sub(buftype, 2, #buftype - 1) .. "|\n" .. string.rep("—", #buftype) .. "\n")
+            buf:set_save_point()
+        end
+    end
+    ui.goto_view(1)
 end)
 
 
