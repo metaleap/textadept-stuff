@@ -1,14 +1,18 @@
 local json = require('lsp-adept.deps.dkjson')
+local common = require('lsp-adept.common')
+
+local Server = {
+    shutting_down = false
+}
 
 
-local jobj = json.decode('{}') -- plain lua {}s would mal-encode into json []s
 local msgicons = {"gtk-dialog-error", "gtk-dialog-warning", "gtk-dialog-info", "gtk-dialog-info", "gtk-dialog-question"}
-local inreqs_ignore, inreqs_todo, notifs_ignore = {}, {}, {}
-inreqs_todo['client/registerCapability'] = 1
+
+local notifs_ignore, inreqs_ignore, inreqs_todo = {}, {}, {}
 notifs_ignore['telemetry/event'] = 1
+inreqs_todo['client/registerCapability'] = 1
 
 
-local Server = { log_rpc = true, allow_markdown_docs = true, shutting_down = false }
 
 function Server.new(lang, desc)
     local me = {lang = lang, desc = desc, server = { caps = nil, name = lang .. " LSP `" .. desc.cmd .. "`" }}
@@ -57,14 +61,16 @@ function Server.ensureProc(me)
                 processId = json.null, rootUri = json.null,
                 initializationOptions = me.desc.init_options or json.null,
                 capabilities = {
-                    window = {showMessage = jobj},
-                    workspace = jobj,
                     textDocument = {
-                        hover = { contentFormat = Server.allow_markdown_docs and { 'markdown', 'plaintext' } or { 'plaintext' } }
-                    }
+                        hover = common.LspAdept.features.textDocument.hover.clientCapabilities()
+                    },
+                    window = {
+                        showMessage = common.json_empty
+                    },
+                    workspace = common.json_empty
                 }
             })
-            Server.sendNotify(me, 'initialized', jobj)
+            Server.sendNotify(me, 'initialized', common.json_empty)
             if resp and resp.result then
                 me.server.caps = resp.result.capabilities
                 if resp.result.serverInfo and resp.result.serverInfo.name and #resp.result.serverInfo.name > 0 then
@@ -122,7 +128,7 @@ function Server.sendMsg(me, msg, addreqid)
             msg.id = me._reqid
         end
         local data = json.encode(msg)
-        if Server.log_rpc then
+        if common.LspAdept.log_rpc then
             Server.log(me, ">>>>" .. data)
         end
         local ok, err = me.proc:write("Content-Length: "..(#data+2).."\r\n\r\n"..data.."\r\n")
@@ -213,7 +219,7 @@ function Server.onIncomingData(me, incoming)
 end
 
 function Server.pushToInbox(me, data)
-    if Server.log_rpc then
+    if common.LspAdept.log_rpc then
         Server.log(me, "<<<<" .. data)
     end
     local msg, errpos, errmsg = json.decode(data)
