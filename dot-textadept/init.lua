@@ -376,7 +376,7 @@ keys['ctrl+r'] = reset
 --end
 keys['f1'] = function(pos)
     textadept.editing.show_documentation(pos)
-    lsp_adept.features.textDocument.hover.showHover()
+    lsp_adept.features.textDocument.hover.show()
 end
 keys['ctrl+,'] = function()
     ui.goto_view(1)
