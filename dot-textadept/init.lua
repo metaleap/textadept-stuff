@@ -386,9 +386,12 @@ keys['ctrl+r'] = reset
 --        lsp.goto_symbol(query)
 --    end
 --end
-keys['f1'] = function(pos)
-    textadept.editing.show_documentation(pos)
-    lsp_adept.features.textDocument.hover.show()
+keys['f1'] = function()
+    if lsp_adept.pertinent() then
+        lsp_adept.features.textDocument.hover.show()
+    else
+        textadept.editing.show_documentation()
+    end
 end
 keys['ctrl+,'] = function()
     ui.goto_view(1)
