@@ -55,8 +55,6 @@ local clearDbgBufs = function()
     end
 end
 
-
-
 events.connect(events.INITIALIZED, function()
     -- hide top menu bar
     textadept.menu.menubar = nil

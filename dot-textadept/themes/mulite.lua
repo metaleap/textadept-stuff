@@ -10,7 +10,7 @@ colors.grey = 0x888B8F -- #8F8B88
 colors.light_grey = 0x989B9F -- #9F9B98
 colors.grey_white = 0xB7B8BF -- #BFB8B7
 colors.dark_white = 0xC7C8CF -- #CFC8C7
-colors.white = 0xE8E9EF
+colors.white = 0xF2F2F2
 colors.light_white = 0xFFFFFF
 
 -- Dark colors.
